@@ -1,0 +1,379 @@
+// ---------------------------------------------------------------------------
+// Salon de la Danse - Plateforme de gestion des benevoles
+// Prisma 7 / PostgreSQL.
+//
+// Convention : modeles au singulier PascalCase, champs camelCase,
+// @@map / @map pour obtenir des tables et colonnes en snake_case.
+// L'URL de connexion vit dans prisma.config.ts, plus dans le bloc datasource.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  VOLUNTEER
+
+  @@map("user_role")
+}
+
+/// DRAFT : le benevole modifie encore son planning.
+/// LOCKED : il a clique sur « Valider definitivement ». Seul un admin peut
+/// encore toucher a ses affectations, et cela ne change pas le statut.
+enum PlanningStatus {
+  DRAFT
+  LOCKED
+
+  @@map("planning_status")
+}
+
+/// SELF : reservation faite par le benevole lui-meme.
+/// ADMIN : attribution forcee (postes sensibles, outrepassement).
+enum AssignmentSource {
+  SELF
+  ADMIN
+
+  @@map("assignment_source")
+}
+
+// ---------------------------------------------------------------------------
+// Authentification (Better Auth)
+// ---------------------------------------------------------------------------
+// Better Auth apporte ses propres tables. Le mot de passe (hash) vit dans
+// Account (providerId = "credential"), jamais sur User : c'est la librairie
+// d'auth qui en est responsable, conformement aux regles du projet.
+
+/// Compte et identite, independants de l'edition : un benevole qui revient
+/// l'annee suivante garde le meme compte, et l'unicite de l'e-mail garantit
+/// qu'une personne ne cree qu'un seul compte.
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  // Champs requis par Better Auth.
+  name          String
+  emailVerified Boolean   @default(false) @map("email_verified")
+  image         String?
+
+  // Champs metier (exposes a Better Auth via additionalFields).
+  firstName String    @map("first_name")
+  lastName  String    @map("last_name")
+  phone     String
+  birthDate DateTime? @map("birth_date") @db.Date
+  role      UserRole  @default(VOLUNTEER)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  volunteers Volunteer[]
+  sessions   Session[]
+  accounts   Account[]
+  auditLogs  AuditLog[]  @relation("AuditLogActor")
+
+  @@index([role])
+  @@index([lastName, firstName])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Edition
+// ---------------------------------------------------------------------------
+
+/// Une edition du Salon. Presente des le depart pour que l'archivage
+/// ne se traduise pas par une migration lourde en fin de projet.
+model Edition {
+  id         String  @id @default(cuid())
+  name       String
+  slug       String  @unique
+  isArchived Boolean @default(false) @map("is_archived")
+
+  // Fenetre d'inscription. En dehors, ou si isRegistrationLocked vaut true,
+  // le planning benevole passe en consultation seule.
+  registrationOpensAt  DateTime @map("registration_opens_at")
+  registrationClosesAt DateTime @map("registration_closes_at")
+  isRegistrationLocked Boolean  @default(false) @map("is_registration_locked")
+
+  // Quotas parametrables : aucune de ces regles n'est ecrite en dur.
+  minSlotsPerVolunteer Int @default(1) @map("min_slots_per_volunteer")
+  maxSlotsPerVolunteer Int @default(3) @map("max_slots_per_volunteer")
+  maxConsecutiveSlots  Int @default(2) @map("max_consecutive_slots")
+
+  // Contenu editorial du dashboard benevole.
+  contactEmail  String? @map("contact_email")
+  contactPhone  String? @map("contact_phone")
+  rulesMarkdown String? @map("rules_markdown")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  volunteers      Volunteer[]
+  missions        Mission[]
+  timeSlots       TimeSlot[]
+  invitationCodes InvitationCode[]
+  auditLogs       AuditLog[]
+
+  @@index([isArchived])
+  @@map("edition")
+}
+
+// ---------------------------------------------------------------------------
+// Participation
+// ---------------------------------------------------------------------------
+
+/// Participation d'un utilisateur a une edition donnee : c'est le « benevole »
+/// au sens du cahier des charges. Porte la photo, le badge et l'etat du
+/// planning, qui sont propres a une edition.
+model Volunteer {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  editionId String @map("edition_id")
+
+  /// Identifiant lisible imprime sur le badge et encode dans le QR Code.
+  badgeNumber String @map("badge_number")
+
+  /// Chemin du fichier photo cote serveur. L'image n'est jamais en base.
+  photoPath String? @map("photo_path")
+
+  planningStatus PlanningStatus @default(DRAFT) @map("planning_status")
+  lockedAt       DateTime?      @map("locked_at")
+
+  /// Une fois validees, les infos personnelles ne sont modifiables que par un
+  /// administrateur.
+  isProfileLocked Boolean @default(false) @map("is_profile_locked")
+
+  /// Renseigne quand un admin valide la participation d'un profil mineur.
+  minorApprovedAt DateTime? @map("minor_approved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  edition        Edition         @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  assignments    Assignment[]
+  invitationCode InvitationCode?
+
+  @@unique([userId, editionId])
+  @@unique([editionId, badgeNumber])
+  @@index([editionId, planningStatus])
+  @@map("volunteer")
+}
+
+/// Code recu par e-mail apres la selection hors plateforme. Sa saisie
+/// conditionne strictement l'acces a l'inscription.
+model InvitationCode {
+  id        String @id @default(cuid())
+  editionId String @map("edition_id")
+
+  code String @unique
+
+  /// E-mail du candidat retenu. Sert a pre-remplir l'inscription et a reperer
+  /// un code utilise par un tiers.
+  email String?
+
+  expiresAt DateTime? @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  usedByVolunteerId String? @unique @map("used_by_volunteer_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  edition         Edition    @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  usedByVolunteer Volunteer? @relation(fields: [usedByVolunteerId], references: [id], onDelete: SetNull)
+
+  @@index([editionId, usedAt])
+  @@index([email])
+  @@map("invitation_code")
+}
+
+// ---------------------------------------------------------------------------
+// Grille de planning
+// ---------------------------------------------------------------------------
+
+model Mission {
+  id        String @id @default(cuid())
+  editionId String @map("edition_id")
+
+  name        String
+  description String?
+  location    String?
+  position    Int
+
+  /// false pour les postes sensibles (Billetterie, Caisse) : ils n'apparaissent
+  /// pas dans le planning public et ne sont attribues que par un admin.
+  isSelfBookable Boolean @default(true) @map("is_self_bookable")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  edition      Edition       @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  missionSlots MissionSlot[]
+
+  @@unique([editionId, name])
+  @@index([editionId, position])
+  @@map("mission")
+}
+
+/// Une tranche horaire de la grille, pour une journee de l'edition.
+model TimeSlot {
+  id        String @id @default(cuid())
+  editionId String @map("edition_id")
+
+  eventDate DateTime @map("event_date") @db.Date
+
+  /// Rang du creneau dans la journee. La regle « pas trois creneaux
+  /// consecutifs » se lit sur ce rang plutot que sur les heures.
+  position Int
+
+  startsAt DateTime @map("starts_at")
+  endsAt   DateTime @map("ends_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  edition      Edition       @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  missionSlots MissionSlot[]
+
+  @@unique([editionId, eventDate, position])
+  @@index([editionId, startsAt])
+  @@map("time_slot")
+}
+
+/// Une case de la grille : une mission ouverte sur un creneau, avec sa jauge.
+model MissionSlot {
+  id         String @id @default(cuid())
+  missionId  String @map("mission_id")
+  timeSlotId String @map("time_slot_id")
+
+  capacity Int
+
+  isOpen Boolean @default(true) @map("is_open")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  mission     Mission      @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  timeSlot    TimeSlot     @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+
+  @@unique([missionId, timeSlotId])
+  /// Cible de la cle etrangere composee portee par Assignment.
+  @@unique([id, timeSlotId])
+  @@index([timeSlotId])
+  @@map("mission_slot")
+}
+
+/// Affectation d'un benevole sur une case de la grille.
+model Assignment {
+  id            String @id @default(cuid())
+  volunteerId   String @map("volunteer_id")
+  missionSlotId String @map("mission_slot_id")
+
+  /// Recopie depuis missionSlot.timeSlotId pour porter la contrainte @@unique :
+  /// un benevole n'a jamais deux missions sur le meme creneau, meme en cas de
+  /// requetes concurrentes. La cle etrangere composee empeche la divergence.
+  timeSlotId String @map("time_slot_id")
+
+  source AssignmentSource @default(SELF)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  volunteer   Volunteer   @relation(fields: [volunteerId], references: [id], onDelete: Cascade)
+  missionSlot MissionSlot @relation(fields: [missionSlotId, timeSlotId], references: [id, timeSlotId], onDelete: Cascade)
+
+  @@unique([volunteerId, timeSlotId])
+  @@index([missionSlotId])
+  @@index([timeSlotId])
+  @@map("assignment")
+}
+
+// ---------------------------------------------------------------------------
+// Tracabilite
+// ---------------------------------------------------------------------------
+
+/// Journal d'audit des actions administrateur. Sans updatedAt : une ligne
+/// d'audit modifiable ne vaut rien comme preuve.
+model AuditLog {
+  id        String  @id @default(cuid())
+  editionId String? @map("edition_id")
+  actorId   String? @map("actor_id")
+
+  action     String
+  entityType String @map("entity_type")
+  entityId   String @map("entity_id")
+
+  changes Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  edition Edition? @relation(fields: [editionId], references: [id], onDelete: SetNull)
+  actor   User?    @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([editionId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_log")
+}

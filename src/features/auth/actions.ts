@@ -1,0 +1,103 @@
+"use server";
+
+import { db } from "@/lib/db";
+import { isDomainError } from "@/lib/errors";
+import { fail, ok, type ActionResult } from "@/lib/result";
+import { photoSchema, registerSchema } from "@/features/auth/schemas";
+import { registerVolunteer } from "@/features/auth/service";
+
+function toBoolean(value: FormDataEntryValue | null): boolean {
+  return value === "on" || value === "true";
+}
+
+/// Server Action d'inscription. Ordre imposé : validation Zod, puis service.
+/// Une Server Action est un endpoint public : rien n'est présumé de l'appelant.
+export async function registerAction(
+  formData: FormData,
+): Promise<ActionResult<{ volunteerId: string }>> {
+  const parsed = registerSchema.safeParse({
+    invitationCode: formData.get("invitationCode"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    birthDate: formData.get("birthDate") ?? "",
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+    acceptTerms: toBoolean(formData.get("acceptTerms")),
+  });
+
+  if (!parsed.success) {
+    return fail(
+      "validation",
+      "Veuillez corriger les champs indiqués.",
+      z_flatten(parsed.error),
+    );
+  }
+
+  const photoParsed = photoSchema.safeParse(formData.get("photo"));
+  if (!photoParsed.success) {
+    return fail("validation", "Photo d'identité invalide.", {
+      photo: photoParsed.error.issues.map((issue) => issue.message),
+    });
+  }
+
+  try {
+    const result = await registerVolunteer(parsed.data, photoParsed.data);
+    return ok(result);
+  } catch (error) {
+    if (isDomainError(error)) {
+      return fail(error.code, error.message);
+    }
+    console.error("[registerAction] erreur inattendue", error);
+    return fail(
+      "unexpected",
+      "Une erreur est survenue. Veuillez réessayer dans un instant.",
+    );
+  }
+}
+
+/// Vérifie qu'un code d'invitation est utilisable, sans créer de compte. Sert à
+/// débloquer l'étape suivante du formulaire d'inscription.
+export async function checkInvitationCodeAction(
+  code: string,
+): Promise<ActionResult<{ prefilledEmail: string | null }>> {
+  const trimmed = code.trim();
+  if (trimmed.length === 0) {
+    return fail("validation", "Code d'invitation requis.");
+  }
+
+  const invitation = await db.invitationCode.findUnique({
+    where: { code: trimmed },
+    select: {
+      email: true,
+      expiresAt: true,
+      usedAt: true,
+      usedByVolunteerId: true,
+      edition: { select: { isArchived: true } },
+    },
+  });
+
+  if (!invitation || invitation.edition.isArchived) {
+    return fail("invitation.invalid", "Code d'invitation inconnu.");
+  }
+  if (invitation.usedAt || invitation.usedByVolunteerId) {
+    return fail("invitation.used", "Ce code a déjà été utilisé.");
+  }
+  if (invitation.expiresAt && invitation.expiresAt < new Date()) {
+    return fail("invitation.expired", "Ce code a expiré.");
+  }
+
+  return ok({ prefilledEmail: invitation.email });
+}
+
+function z_flatten(error: {
+  issues: { path: PropertyKey[]; message: string }[];
+}): Record<string, string[]> {
+  const fieldErrors: Record<string, string[]> = {};
+  for (const issue of error.issues) {
+    const key = String(issue.path[0] ?? "form");
+    (fieldErrors[key] ??= []).push(issue.message);
+  }
+  return fieldErrors;
+}

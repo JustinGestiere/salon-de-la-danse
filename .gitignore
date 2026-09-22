@@ -1,0 +1,21 @@
+/node_modules
+/.next
+/out
+/build
+next-env.d.ts
+
+# Générés
+/src/generated
+
+# Env & secrets
+.env
+.env*.local
+
+# Uploads locaux (photos d'identité) — jamais versionnés
+/storage
+/public/uploads
+
+# Divers
+.DS_Store
+*.tsbuildinfo
+/coverage
