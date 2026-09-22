@@ -1,10 +1,13 @@
-import { randomUUID } from "node:crypto";
-
 import { config as loadEnv } from "dotenv";
 import { hashPassword } from "better-auth/crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client.js";
+import {
+  canAddCell,
+  type SelectedCell,
+  type SlotRules,
+} from "../src/features/planning/rules.js";
 
 loadEnv();
 
@@ -29,9 +32,97 @@ const DAILY_SLOTS: { position: number; start: [number, number]; end: [number, nu
 
 const EVENT_DAYS = ["2027-05-14", "2027-05-15", "2027-05-16"];
 
+// --------------------------------------------------------------------------
+// Remplissage de démonstration
+// --------------------------------------------------------------------------
+// Sans bénévoles fictifs, toutes les jauges sortent vertes et les compteurs du
+// back-office affichent zéro. Les taux ci-dessous sont une table fixe plutôt
+// qu'un tirage aléatoire : le jeu de démonstration doit être identique à chaque
+// seed, sinon impossible de préparer une démonstration.
+
+/// Taux de remplissage visé par créneau. Choisis pour que la grille montre les
+/// trois états de jauge : libre, tendu, complet.
+const FILL_RATIO_BY_POSITION: Record<number, number> = {
+  1: 0.3,
+  2: 0.9,
+  3: 1,
+  4: 0.55,
+  5: 0.75,
+};
+
+/// Affluence relative par journée : le samedi est le pic du salon.
+const FILL_RATIO_BY_DAY: Record<string, number> = {
+  "2027-05-14": 0.7,
+  "2027-05-15": 1,
+  "2027-05-16": 0.85,
+};
+
+/// Garde-fou : le salon compte environ 130 bénévoles. La boucle s'arrête d'elle
+/// même dès que tous les objectifs de remplissage sont atteints.
+const MAX_FILLER_VOLUNTEERS = 130;
+
+/// Nombre d'affectations forcées par un administrateur sur les postes sensibles
+/// (Billetterie, Caisse), pour que le back-office ait de quoi montrer.
+const ADMIN_ASSIGNED_COUNT = 8;
+
+const FILLER_RULES: SlotRules = { minSlots: 1, maxSlots: 3, maxConsecutive: 2 };
+
+const FILLER_FIRST_NAMES = [
+  "Camille", "Lucas", "Inès", "Nathan", "Jade", "Hugo", "Léa", "Malo",
+  "Anaïs", "Théo", "Manon", "Yanis", "Sarah", "Enzo", "Louise", "Adam",
+  "Clara", "Noé", "Zoé", "Ilan",
+];
+
+const FILLER_LAST_NAMES = [
+  "Bertin", "Chauvet", "Doucet", "Fournier", "Gicquel", "Hamon", "Jolivet",
+  "Lebreton", "Moreau", "Perrin", "Renou", "Sauvage", "Thibault", "Vallée",
+];
+
+type TimeSlotRow = { id: string; eventDate: string; position: number };
+
+type MissionSeed = {
+  name: string;
+  location: string;
+  position: number;
+  capacity: number;
+  selfBookable: boolean;
+  description: string;
+  /// Attractivité relative de la mission, appliquée au taux de remplissage.
+  popularity: number;
+};
+
+/// Une case de la grille suivie pendant le remplissage de démonstration.
+type FillCell = {
+  missionSlotId: string;
+  timeSlotId: string;
+  eventDate: string;
+  position: number;
+  capacity: number;
+  /// Nombre de places que le seed cherche à occuper sur cette case.
+  target: number;
+  taken: number;
+};
+
+type FillerRecord = {
+  volunteerId: string;
+  selection: SelectedCell[];
+};
+
 function utc(isoDate: string, hour: number, minute: number): Date {
   const [year, month, day] = isoDate.split("-").map(Number);
   return new Date(Date.UTC(year!, month! - 1, day!, hour - CEST_OFFSET_HOURS, minute));
+}
+
+/// Le hachage d'un mot de passe est volontairement coûteux. On ne le calcule
+/// donc qu'une fois pour tous les comptes de démonstration.
+let cachedPasswordHash: string | null = null;
+async function getDemoPasswordHash(): Promise<string> {
+  const cached = cachedPasswordHash;
+  if (cached !== null) return cached;
+
+  const hash = await hashPassword(DEMO_PASSWORD);
+  cachedPasswordHash = hash;
+  return hash;
 }
 
 async function createUser(input: {
@@ -61,7 +152,7 @@ async function createUser(input: {
       accountId: user.id,
       providerId: "credential",
       userId: user.id,
-      password: await hashPassword(DEMO_PASSWORD),
+      password: await getDemoPasswordHash(),
     },
   });
 
@@ -81,6 +172,191 @@ async function resetDatabase(): Promise<void> {
   await db.session.deleteMany();
   await db.user.deleteMany();
   await db.edition.deleteMany();
+}
+
+const MISSIONS: MissionSeed[] = [
+  { name: "Accueil", location: "Hall d'entrée", position: 1, capacity: 6, selfBookable: true, popularity: 1, description: "Accueillir et orienter le public." },
+  { name: "Vestiaire", location: "Niveau 0", position: 2, capacity: 4, selfBookable: true, popularity: 0.8, description: "Gestion des vestiaires." },
+  { name: "Bar / Restauration", location: "Niveau 0", position: 3, capacity: 5, selfBookable: true, popularity: 0.95, description: "Service au bar et snacking." },
+  { name: "Logistique / Montage", location: "Niveau -2", position: 4, capacity: 4, selfBookable: true, popularity: 0.6, description: "Aide au montage et à la logistique." },
+  { name: "Orientation public", location: "Étages", position: 5, capacity: 4, selfBookable: true, popularity: 0.75, description: "Guider le public entre les salles." },
+  { name: "Billetterie", location: "Entrée", position: 6, capacity: 3, selfBookable: false, popularity: 0, description: "Poste sensible : attribution par un admin." },
+  { name: "Caisse", location: "Entrée", position: 7, capacity: 2, selfBookable: false, popularity: 0, description: "Poste sensible : attribution par un admin." },
+];
+
+function computeTarget(cell: Omit<FillCell, "target" | "taken">, popularity: number): number {
+  const slotRatio = FILL_RATIO_BY_POSITION[cell.position] ?? 0.5;
+  const dayRatio = FILL_RATIO_BY_DAY[cell.eventDate] ?? 0.8;
+  const target = Math.round(cell.capacity * slotRatio * dayRatio * popularity);
+  return Math.min(Math.max(target, 0), cell.capacity);
+}
+
+/// Tri déterministe : d'abord les cases les plus en retard sur leur objectif,
+/// puis un ordre stable pour que deux seeds produisent exactement le même jeu.
+function compareByDeficit(left: FillCell, right: FillCell): number {
+  const deficit = right.target - right.taken - (left.target - left.taken);
+  if (deficit !== 0) return deficit;
+  return (
+    left.eventDate.localeCompare(right.eventDate) ||
+    left.position - right.position ||
+    left.missionSlotId.localeCompare(right.missionSlotId)
+  );
+}
+
+function toSelectedCell(cell: FillCell): SelectedCell {
+  return {
+    missionSlotId: cell.missionSlotId,
+    timeSlotId: cell.timeSlotId,
+    eventDate: cell.eventDate,
+    position: cell.position,
+  };
+}
+
+/// Répartit des bénévoles fictifs sur les cases en retard, en respectant les
+/// mêmes règles métier que l'application (canAddCell) : le jeu de démonstration
+/// ne peut donc pas contenir de planning que l'application refuserait.
+function planFillerSelections(cells: FillCell[]): FillCell[][] {
+  const plans: FillCell[][] = [];
+
+  for (let index = 0; index < MAX_FILLER_VOLUNTEERS; index += 1) {
+    const candidates = cells
+      .filter((cell) => cell.taken < cell.target)
+      .sort(compareByDeficit);
+    if (candidates.length === 0) break;
+
+    const selection: SelectedCell[] = [];
+    const chosen: FillCell[] = [];
+    for (const cell of candidates) {
+      if (chosen.length >= FILLER_RULES.maxSlots) break;
+      if (canAddCell(selection, toSelectedCell(cell), FILLER_RULES) !== null) continue;
+      selection.push(toSelectedCell(cell));
+      chosen.push(cell);
+    }
+
+    if (chosen.length === 0) break;
+    for (const cell of chosen) cell.taken += 1;
+    plans.push(chosen);
+  }
+
+  return plans;
+}
+
+async function seedFillerVolunteers(
+  editionId: string,
+  cells: FillCell[],
+): Promise<FillerRecord[]> {
+  // Les bénévoles nommés ont déjà pris des places : on part de l'état réel de
+  // la base plutôt que de zéro, sinon on dépasserait les capacités.
+  const existing = await db.assignment.groupBy({
+    by: ["missionSlotId"],
+    _count: { _all: true },
+  });
+  const takenByCell = new Map(existing.map((row) => [row.missionSlotId, row._count._all]));
+  for (const cell of cells) {
+    cell.taken = takenByCell.get(cell.missionSlotId) ?? 0;
+  }
+
+  const plans = planFillerSelections(cells);
+  const records: FillerRecord[] = [];
+
+  for (const [index, plan] of plans.entries()) {
+    const firstName = FILLER_FIRST_NAMES[index % FILLER_FIRST_NAMES.length] ?? "Camille";
+    const lastName = FILLER_LAST_NAMES[index % FILLER_LAST_NAMES.length] ?? "Bertin";
+    const reference = String(index + 1).padStart(3, "0");
+
+    const userId = await createUser({
+      email: `benevole-${reference}@salon-danse.example`,
+      firstName,
+      lastName,
+      phone: "0600000000",
+      role: "VOLUNTEER",
+      birthDate: new Date("1996-03-21T00:00:00Z"),
+    });
+
+    // Deux tiers des plannings sont validés : le back-office doit pouvoir
+    // distinguer « validés » et « en attente ».
+    const isLocked = index % 3 !== 0;
+
+    const volunteer = await db.volunteer.create({
+      data: {
+        userId,
+        editionId,
+        badgeNumber: `BEN-F${reference}`,
+        planningStatus: isLocked ? "LOCKED" : "DRAFT",
+        lockedAt: isLocked ? new Date() : null,
+      },
+      select: { id: true },
+    });
+
+    await db.invitationCode.create({
+      data: {
+        editionId,
+        code: `INV-F${reference}`,
+        email: `benevole-${reference}@salon-danse.example`,
+        usedAt: new Date(),
+        usedByVolunteerId: volunteer.id,
+      },
+    });
+
+    await db.assignment.createMany({
+      data: plan.map((cell) => ({
+        volunteerId: volunteer.id,
+        missionSlotId: cell.missionSlotId,
+        timeSlotId: cell.timeSlotId,
+        source: "SELF" as const,
+      })),
+    });
+
+    records.push({ volunteerId: volunteer.id, selection: plan.map(toSelectedCell) });
+  }
+
+  return records;
+}
+
+/// Attribue quelques postes sensibles à la main, comme le ferait un
+/// administrateur : ces cases ne sont pas réservables en libre-service.
+async function seedAdminAssignments(
+  editionId: string,
+  fillers: FillerRecord[],
+): Promise<number> {
+  const restrictedSlots = await db.missionSlot.findMany({
+    where: { isOpen: true, mission: { editionId, isSelfBookable: false } },
+    select: {
+      id: true,
+      timeSlotId: true,
+      timeSlot: { select: { eventDate: true, position: true } },
+    },
+    orderBy: [{ timeSlot: { eventDate: "asc" } }, { timeSlot: { position: "asc" } }],
+    take: ADMIN_ASSIGNED_COUNT,
+  });
+
+  let assigned = 0;
+  for (const slot of restrictedSlots) {
+    const candidate: SelectedCell = {
+      missionSlotId: slot.id,
+      timeSlotId: slot.timeSlotId,
+      eventDate: slot.timeSlot.eventDate.toISOString().slice(0, 10),
+      position: slot.timeSlot.position,
+    };
+
+    const host = fillers.find(
+      (filler) => canAddCell(filler.selection, candidate, FILLER_RULES) === null,
+    );
+    if (!host) continue;
+
+    await db.assignment.create({
+      data: {
+        volunteerId: host.volunteerId,
+        missionSlotId: candidate.missionSlotId,
+        timeSlotId: candidate.timeSlotId,
+        source: "ADMIN",
+      },
+    });
+    host.selection.push(candidate);
+    assigned += 1;
+  }
+
+  return assigned;
 }
 
 async function main(): Promise<void> {
@@ -104,7 +380,7 @@ async function main(): Promise<void> {
     select: { id: true },
   });
 
-  const timeSlotIds = new Map<string, string>();
+  const timeSlots: TimeSlotRow[] = [];
   for (const day of EVENT_DAYS) {
     for (const slot of DAILY_SLOTS) {
       const created = await db.timeSlot.create({
@@ -117,22 +393,12 @@ async function main(): Promise<void> {
         },
         select: { id: true },
       });
-      timeSlotIds.set(`${day}:${slot.position}`, created.id);
+      timeSlots.push({ id: created.id, eventDate: day, position: slot.position });
     }
   }
 
-  const missions = [
-    { name: "Accueil", location: "Hall d'entrée", position: 1, capacity: 6, selfBookable: true, description: "Accueillir et orienter le public." },
-    { name: "Vestiaire", location: "Niveau 0", position: 2, capacity: 4, selfBookable: true, description: "Gestion des vestiaires." },
-    { name: "Bar / Restauration", location: "Niveau 0", position: 3, capacity: 5, selfBookable: true, description: "Service au bar et snacking." },
-    { name: "Logistique / Montage", location: "Niveau -2", position: 4, capacity: 4, selfBookable: true, description: "Aide au montage et à la logistique." },
-    { name: "Orientation public", location: "Étages", position: 5, capacity: 4, selfBookable: true, description: "Guider le public entre les salles." },
-    { name: "Billetterie", location: "Entrée", position: 6, capacity: 3, selfBookable: false, description: "Poste sensible : attribution par un admin." },
-    { name: "Caisse", location: "Entrée", position: 7, capacity: 2, selfBookable: false, description: "Poste sensible : attribution par un admin." },
-  ];
-
-  const missionSlotIds: string[] = [];
-  for (const mission of missions) {
+  const fillCells: FillCell[] = [];
+  for (const mission of MISSIONS) {
     const createdMission = await db.mission.create({
       data: {
         editionId: edition.id,
@@ -145,12 +411,25 @@ async function main(): Promise<void> {
       select: { id: true },
     });
 
-    for (const timeSlotId of timeSlotIds.values()) {
+    for (const timeSlot of timeSlots) {
       const slot = await db.missionSlot.create({
-        data: { missionId: createdMission.id, timeSlotId, capacity: mission.capacity },
+        data: {
+          missionId: createdMission.id,
+          timeSlotId: timeSlot.id,
+          capacity: mission.capacity,
+        },
         select: { id: true },
       });
-      if (mission.selfBookable) missionSlotIds.push(slot.id);
+      if (!mission.selfBookable) continue;
+
+      const base = {
+        missionSlotId: slot.id,
+        timeSlotId: timeSlot.id,
+        eventDate: timeSlot.eventDate,
+        position: timeSlot.position,
+        capacity: mission.capacity,
+      };
+      fillCells.push({ ...base, target: computeTarget(base, mission.popularity), taken: 0 });
     }
   }
 
@@ -162,10 +441,20 @@ async function main(): Promise<void> {
     role: "ADMIN",
   });
 
-  await seedVolunteers(edition.id, timeSlotIds);
+  await seedVolunteers(edition.id, timeSlots);
+  const fillers = await seedFillerVolunteers(edition.id, fillCells);
+  const adminAssigned = await seedAdminAssignments(edition.id, fillers);
   await seedInvitationCodes(edition.id);
 
+  const seats = fillCells.reduce((total, cell) => total + cell.taken, 0);
+  const capacity = fillCells.reduce((total, cell) => total + cell.capacity, 0);
+
   console.log("Seed terminé.");
+  console.log(
+    `Grille : ${seats}/${capacity} places réservées en libre-service, ` +
+      `${adminAssigned} postes sensibles attribués par l'admin.`,
+  );
+  console.log(`Bénévoles fictifs : ${fillers.length} (en plus des 3 comptes nommés).`);
   console.log(`Comptes démo (mot de passe : ${DEMO_PASSWORD}) :`);
   console.log("  - admin@salon-danse.example (ADMIN)");
   console.log("  - benevole1@salon-danse.example (brouillon vide)");
@@ -176,23 +465,23 @@ async function main(): Promise<void> {
 
 async function seedVolunteers(
   editionId: string,
-  timeSlotIds: Map<string, string>,
+  timeSlots: readonly TimeSlotRow[],
 ): Promise<void> {
   const volunteers = [
-    { email: "benevole1@salon-danse.example", first: "Bruno", badge: "BEN-DEMO1", locked: false, slots: [] as string[] },
+    { email: "benevole1@salon-danse.example", first: "Bruno", badge: "BEN-DEMO1", locked: false, slots: [] as [string, number][] },
     {
       email: "benevole2@salon-danse.example",
       first: "Chloé",
       badge: "BEN-DEMO2",
       locked: false,
-      slots: ["2027-05-14:1", "2027-05-14:3"],
+      slots: [["2027-05-14", 1], ["2027-05-14", 3]] as [string, number][],
     },
     {
       email: "benevole3@salon-danse.example",
       first: "David",
       badge: "BEN-DEMO3",
       locked: true,
-      slots: ["2027-05-15:2", "2027-05-16:4"],
+      slots: [["2027-05-15", 2], ["2027-05-16", 4]] as [string, number][],
     },
   ];
 
@@ -217,14 +506,21 @@ async function seedVolunteers(
       select: { id: true },
     });
 
-    for (const key of item.slots) {
-      const timeSlotId = timeSlotIds.get(key);
-      if (!timeSlotId) continue;
+    for (const [day, position] of item.slots) {
+      const timeSlot = timeSlots.find(
+        (slot) => slot.eventDate === day && slot.position === position,
+      );
+      if (!timeSlot) continue;
+
+      // orderBy explicite : sans lui, la mission retenue varie d'un seed à
+      // l'autre et le jeu de démonstration n'est plus reproductible.
       const missionSlot = await db.missionSlot.findFirst({
-        where: { timeSlotId, mission: { isSelfBookable: true } },
+        where: { timeSlotId: timeSlot.id, mission: { isSelfBookable: true } },
+        orderBy: { mission: { position: "asc" } },
         select: { id: true, timeSlotId: true },
       });
       if (!missionSlot) continue;
+
       await db.assignment.create({
         data: {
           volunteerId: volunteer.id,
@@ -241,7 +537,7 @@ async function seedInvitationCodes(editionId: string): Promise<void> {
   const codes = ["DEMO-ALPHA", "DEMO-BRAVO", "DEMO-CHARLIE"];
   for (const code of codes) {
     await db.invitationCode.create({
-      data: { editionId, code, email: null, id: randomUUID() },
+      data: { editionId, code, email: null },
     });
   }
 }
