@@ -95,6 +95,13 @@ async function addAssignment(
   }
 
   await db.$transaction(async (tx) => {
+    // Verrou de ligne avant de compter. Sans lui, deux réservations
+    // simultanées sur la dernière place lisent toutes les deux capacity - 1 et
+    // s'insèrent toutes les deux : PostgreSQL est en Read Committed par défaut
+    // et la contrainte unique ne couvre que le double-booking d'un même
+    // bénévole, pas le dépassement de jauge.
+    await tx.$queryRaw`SELECT id FROM mission_slot WHERE id = ${slot.id} FOR UPDATE`;
+
     const taken = await tx.assignment.count({ where: { missionSlotId: slot.id } });
     if (taken >= slot.capacity) {
       throw new DomainError("slot.full", "Cette mission est complète.");

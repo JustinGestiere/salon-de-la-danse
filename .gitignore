@@ -1,4 +1,6 @@
 /node_modules
+# Dossiers laissés par une installation npm interrompue.
+/_node_modules*
 /.next
 /out
 /build
