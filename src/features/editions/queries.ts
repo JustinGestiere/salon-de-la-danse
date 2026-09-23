@@ -64,3 +64,14 @@ export function isRegistrationOpen(
   if (edition.isRegistrationLocked) return false;
   return now >= edition.registrationOpensAt && now <= edition.registrationClosesAt;
 }
+
+/// Début du premier créneau de l'édition : le « lever de rideau ». Null tant
+/// que la grille n'est pas créée.
+export async function getEditionStart(editionId: string): Promise<Date | null> {
+  const firstSlot = await db.timeSlot.findFirst({
+    where: { editionId },
+    orderBy: { startsAt: "asc" },
+    select: { startsAt: true },
+  });
+  return firstSlot?.startsAt ?? null;
+}

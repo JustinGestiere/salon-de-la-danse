@@ -71,6 +71,12 @@ model User {
   birthDate DateTime? @map("birth_date") @db.Date
   role      UserRole  @default(VOLUNTEER)
 
+  // Champs du plugin admin de Better Auth (bannissement). Non utilises par le
+  // metier, mais requis par la librairie des qu'elle est configuree.
+  banned     Boolean?  @default(false)
+  banReason  String?   @map("ban_reason")
+  banExpires DateTime? @map("ban_expires")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -91,6 +97,10 @@ model Session {
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
   userId    String   @map("user_id")
+
+  /// Renseigne par le plugin admin de Better Auth en cas d'usurpation
+  /// d'identite (fonction non utilisee par le projet).
+  impersonatedBy String? @map("impersonated_by")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
