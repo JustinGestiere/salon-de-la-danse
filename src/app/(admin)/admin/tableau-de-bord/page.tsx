@@ -5,6 +5,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { formatEventDateLong } from "@/lib/format";
 import { FillRateBar } from "@/features/admin/components/fill-rate-bar";
 import { StatTile } from "@/features/admin/components/stat-tile";
+import { requireAdmin } from "@/features/admin/guards";
 import { getAdminOverview, getFillRates } from "@/features/admin/queries";
 import { getActiveEdition, isRegistrationOpen } from "@/features/editions/queries";
 
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminDashboardPage() {
+  // Le layout ne suffit pas : il n'est pas réexécuté à chaque navigation et ne
+  // bloque pas le rendu de la page (doc Next « Layouts and auth checks »).
+  await requireAdmin();
   const edition = await getActiveEdition();
 
   if (!edition) {
