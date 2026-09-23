@@ -22,11 +22,15 @@ export async function storeVolunteerPhoto(
   const extension = EXTENSION_BY_MIME[file.type as AcceptedPhotoMimeType] ?? "bin";
   const fileName = `${volunteerId}.${extension}`;
 
-  await mkdir(env.UPLOAD_DIR, { recursive: true });
-  const absolutePath = path.join(env.UPLOAD_DIR, fileName);
+  // UPLOAD_DIR n'est connu qu'à l'exécution : sans ces commentaires, le
+  // traçage du build ne peut pas délimiter le dossier et embarque tout le
+  // projet dans le bundle serveur, fichier .env compris.
+  const uploadDir = path.join(/* turbopackIgnore: true */ env.UPLOAD_DIR);
+  const photoPath = path.join(/* turbopackIgnore: true */ uploadDir, fileName);
 
+  await mkdir(uploadDir, { recursive: true });
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(absolutePath, buffer);
+  await writeFile(photoPath, buffer);
 
-  return path.join(env.UPLOAD_DIR, fileName);
+  return photoPath;
 }
