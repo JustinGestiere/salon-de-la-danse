@@ -13,12 +13,13 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
   database: prismaAdapter(db, { provider: "postgresql" }),
-  // L'inscription est strictement conditionnée au code d'invitation : elle ne
-  // passe que par la Server Action registerAction, qui appelle
-  // auth.api.signUpEmail côté serveur. La route HTTP publique de Better Auth
-  // permettrait de créer un compte sans code, elle est donc désactivée (les
-  // appels auth.api.* ne passent pas par ce filtre).
-  disabledPaths: ["/sign-up/email"],
+  // Routes HTTP publiques de Better Auth coupées (les appels auth.api.* côté
+  // serveur ne passent pas par ce filtre) :
+  // - /sign-up/email : l'inscription est strictement conditionnée au code
+  //   d'invitation et ne passe que par la Server Action registerAction ;
+  // - /update-user : une fois validées, les informations personnelles ne sont
+  //   modifiables que par un administrateur (cahier des charges).
+  disabledPaths: ["/sign-up/email", "/update-user"],
   emailAndPassword: {
     enabled: true,
     // La verification d'e-mail se fait par code d'invitation en amont ; on ne

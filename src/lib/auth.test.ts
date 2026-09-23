@@ -30,4 +30,17 @@ describe("auth HTTP routes", () => {
 
     expect(response.status).toBe(404);
   });
+
+  it("rejects a volunteer editing their own personal information", async () => {
+    const request = new Request("http://localhost:3000/api/auth/update-user", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+      body: JSON.stringify({ firstName: "Pirate", phone: "0000000000" }),
+    });
+
+    const response = await auth.handler(request);
+
+    // 404 et non 401 : la route est coupée avant même la lecture de la session.
+    expect(response.status).toBe(404);
+  });
 });
