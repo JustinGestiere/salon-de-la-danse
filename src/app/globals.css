@@ -36,3 +36,214 @@ body {
   outline: 2px solid var(--color-brand-600);
   outline-offset: 2px;
 }
+
+/* ------------------------------------------------------------------------ */
+/* Back-office : thème « crépuscule », en sombre et en clair.                 */
+/* ------------------------------------------------------------------------ */
+/* Les utilitaires ci-dessous pointent vers des variables définies seulement  */
+/* sous .admin-theme : l'espace bénévole, qui ne porte pas cette classe, n'est */
+/* pas touché. `inline` fait lire la variable au niveau de l'élément, ce qui  */
+/* permet de basculer de palette sans régénérer les classes.                  */
+@theme inline {
+  --color-canvas: var(--admin-bg);
+  --color-surface: var(--admin-surface);
+  --color-raised: var(--admin-raised);
+  --color-line: var(--admin-line);
+  --color-line-strong: var(--admin-line-strong);
+  --color-ink: var(--admin-ink);
+  --color-ink-soft: var(--admin-ink-soft);
+  --color-muted: var(--admin-muted);
+  --color-subtle: var(--admin-subtle);
+  --color-accent: var(--admin-accent);
+  --color-accent-strong: var(--admin-accent-strong);
+  --color-on-accent: var(--admin-on-accent);
+  --color-lilac: var(--admin-lilac);
+  --color-lilac-ink: var(--admin-lilac-ink);
+  --color-lilac-soft: var(--admin-lilac-soft);
+  --color-ok: var(--admin-ok);
+  --color-ok-ink: var(--admin-ok-ink);
+  --color-ok-soft: var(--admin-ok-soft);
+  --color-warn: var(--admin-warn);
+  --color-warn-ink: var(--admin-warn-ink);
+  --color-warn-soft: var(--admin-warn-soft);
+  --color-danger: var(--admin-danger);
+  --color-danger-ink: var(--admin-danger-ink);
+  --color-danger-soft: var(--admin-danger-soft);
+
+  --font-display: var(--font-admin-display);
+  --font-admin: var(--font-admin-sans);
+  --font-code: var(--font-admin-mono);
+}
+
+/* Dégradé coucher de soleil : le seul accent fort du back-office. */
+@utility bg-sunset {
+  background-image: linear-gradient(90deg, var(--admin-rose), var(--admin-peach));
+}
+
+.admin-theme {
+  /* Palette sombre, valeur par défaut. */
+  --admin-bg: #120a1e;
+  --admin-surface: #1a1129;
+  --admin-raised: #231736;
+  --admin-line: #2f2345;
+  --admin-line-strong: #45365f;
+  --admin-ink: #f7f1fa;
+  --admin-ink-soft: #d9cde6;
+  --admin-muted: #b4a7c6;
+  --admin-subtle: #8c7da3;
+  --admin-accent: #ffb38a;
+  --admin-accent-strong: #ffe3cc;
+  --admin-on-accent: #1a0f26;
+  --admin-rose: #ff7a9c;
+  --admin-peach: #ffb36b;
+  --admin-lilac: #c3a6ff;
+  --admin-lilac-ink: #d9c8ff;
+  --admin-lilac-soft: rgb(195 166 255 / 0.16);
+  --admin-ok: #5fd39a;
+  --admin-ok-ink: #8fe6b8;
+  --admin-ok-soft: rgb(95 211 154 / 0.14);
+  --admin-warn: #f5b04c;
+  --admin-warn-ink: #f8c77d;
+  --admin-warn-soft: rgb(245 176 76 / 0.16);
+  --admin-danger: #f2677a;
+  --admin-danger-ink: #f7a0ac;
+  --admin-danger-soft: rgb(242 103 122 / 0.16);
+  --admin-glow: rgb(255 122 156 / 0.4);
+
+  color-scheme: dark;
+  background-color: var(--admin-bg);
+  color: var(--admin-ink);
+  font-family: var(--font-admin-sans), var(--font-sans);
+}
+
+/* Palette claire : appliquée quand l'utilisateur la choisit, ou quand il */
+/* suit le système et que celui-ci est en clair.                          */
+.admin-theme[data-theme="light"] {
+  --admin-bg: #fbf6f1;
+  --admin-surface: #ffffff;
+  --admin-raised: #f5ede6;
+  --admin-line: #eadfd5;
+  --admin-line-strong: #d8c8ba;
+  --admin-ink: #1f1329;
+  --admin-ink-soft: #3a2b48;
+  --admin-muted: #5e4f70;
+  --admin-subtle: #6f6083;
+  --admin-accent: #b2456a;
+  --admin-accent-strong: #8e2f52;
+  --admin-on-accent: #1f1329;
+  --admin-rose: #f2668e;
+  --admin-peach: #f9a55c;
+  --admin-lilac: #7b5cd6;
+  --admin-lilac-ink: #5d40b0;
+  --admin-lilac-soft: #efe8ff;
+  --admin-ok: #2e9b63;
+  --admin-ok-ink: #1d6b43;
+  --admin-ok-soft: #e2f4ea;
+  --admin-warn: #d98a1c;
+  --admin-warn-ink: #8a5300;
+  --admin-warn-soft: #fcefd9;
+  --admin-danger: #d9435b;
+  --admin-danger-ink: #a8263d;
+  --admin-danger-soft: #fbe3e7;
+  --admin-glow: rgb(242 102 142 / 0.2);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  .admin-theme[data-theme="system"] {
+    --admin-bg: #fbf6f1;
+    --admin-surface: #ffffff;
+    --admin-raised: #f5ede6;
+    --admin-line: #eadfd5;
+    --admin-line-strong: #d8c8ba;
+    --admin-ink: #1f1329;
+    --admin-ink-soft: #3a2b48;
+    --admin-muted: #5e4f70;
+    --admin-subtle: #6f6083;
+    --admin-accent: #b2456a;
+    --admin-accent-strong: #8e2f52;
+    --admin-on-accent: #1f1329;
+    --admin-rose: #f2668e;
+    --admin-peach: #f9a55c;
+    --admin-lilac: #7b5cd6;
+    --admin-lilac-ink: #5d40b0;
+    --admin-lilac-soft: #efe8ff;
+    --admin-ok: #2e9b63;
+    --admin-ok-ink: #1d6b43;
+    --admin-ok-soft: #e2f4ea;
+    --admin-warn: #d98a1c;
+    --admin-warn-ink: #8a5300;
+    --admin-warn-soft: #fcefd9;
+    --admin-danger: #d9435b;
+    --admin-danger-ink: #a8263d;
+    --admin-danger-soft: #fbe3e7;
+    --admin-glow: rgb(242 102 142 / 0.2);
+
+    color-scheme: light;
+  }
+}
+
+.admin-theme :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+}
+
+/* Badge imprimé : du papier clair, quel que soit le thème de l'écran. */
+.admin-badge {
+  --badge-paper: #ffffff;
+  --badge-ink: #1a0f26;
+  --badge-ink-soft: #3d2c4f;
+  --badge-muted: #6b5a7e;
+  --badge-cut: #cbbfd8;
+  --badge-photo: #f5ede6;
+  --badge-alert: #a8263d;
+}
+
+/* Pages nommées : elles ne touchent que les impressions de la régie, pas le */
+/* récapitulatif imprimé côté bénévole.                                     */
+@page admin-badges {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@page admin-list {
+  size: A4 landscape;
+  margin: 12mm;
+}
+
+@page admin-document {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
+.admin-badge-sheet {
+  page: admin-badges;
+}
+
+.admin-print-list {
+  page: admin-list;
+}
+
+.admin-print-document {
+  page: admin-document;
+}
+
+@media print {
+  /* Sans cela, les navigateurs n'impriment pas les fonds (dégradés du badge). */
+  /* Le fond du thème, lui, cède la place au papier.                         */
+  .admin-print-root {
+    background-color: #ffffff;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Une planche de 8 badges par page A4, sans page blanche après la dernière. */
+  .admin-badge-sheet {
+    break-after: page;
+  }
+
+  .admin-badge-sheet:last-of-type {
+    break-after: auto;
+  }
+}

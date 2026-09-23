@@ -46,8 +46,9 @@ async function lockDraftPlanning(tx: Transaction, volunteerId: string): Promise<
 }
 
 /// Charge la sélection courante du bénévole sous la forme attendue par les
-/// règles métier.
-async function loadSelectedCells(tx: Transaction, volunteerId: string): Promise<SelectedCell[]> {
+/// règles métier. À appeler sous le verrou du bénévole pour lire une sélection
+/// à jour.
+export async function loadSelectedCells(tx: Transaction, volunteerId: string): Promise<SelectedCell[]> {
   const assignments = await tx.assignment.findMany({
     where: { volunteerId },
     select: {

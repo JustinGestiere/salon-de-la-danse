@@ -3,6 +3,8 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins/admin";
+import { adminAc, userAc } from "better-auth/plugins/admin/access";
 
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -33,13 +35,23 @@ export const auth = betterAuth({
       firstName: { type: "string", required: true, input: true },
       lastName: { type: "string", required: true, input: true },
       phone: { type: "string", required: true, input: true },
-      role: { type: "string", required: false, input: false },
+      // Le champ `role` est apporté par le plugin admin ci-dessous.
     },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 jours
     updateAge: 60 * 60 * 24, // rafraichi une fois par jour
   },
-  // Ecrit les cookies de session depuis les Server Actions.
-  plugins: [nextCookies()],
+  plugins: [
+    // Plugin admin officiel : réinitialisation des mots de passe par la régie.
+    // Les rôles reprennent l'enum Prisma UserRole au lieu de « admin »/« user ».
+    admin({
+      defaultRole: "VOLUNTEER",
+      adminRoles: ["ADMIN"],
+      roles: { ADMIN: adminAc, VOLUNTEER: userAc },
+    }),
+    // Ecrit les cookies de session depuis les Server Actions. Doit rester le
+    // dernier plugin.
+    nextCookies(),
+  ],
 });

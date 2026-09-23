@@ -8,10 +8,13 @@ const { requireAdmin, getActiveEdition } = vi.hoisted(() => ({
 vi.mock("@/features/admin/guards", () => ({ requireAdmin }));
 vi.mock("@/features/admin/queries", () => ({
   getAdminOverview: vi.fn(),
-  getFillRates: vi.fn(),
+}));
+vi.mock("@/features/planning/admin-queries", () => ({
+  getAdminGrid: vi.fn(),
 }));
 vi.mock("@/features/editions/queries", () => ({
   getActiveEdition,
+  getEditionStart: vi.fn(),
   isRegistrationOpen: vi.fn(),
 }));
 
