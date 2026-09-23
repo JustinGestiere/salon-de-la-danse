@@ -8,7 +8,6 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-forwarded-for": "203.0.113.7" }),
 }));
-vi.mock("@/lib/db", () => ({ db: {} }));
 vi.mock("@/features/auth/service", () => ({ registerVolunteer }));
 
 const { registerAction } = await import("./actions");

@@ -66,10 +66,3 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
-
-/// Verification isolee d'un code d'invitation, avant meme le formulaire complet.
-export const invitationCodeSchema = z.object({
-  code: z.string().trim().min(1, { message: "Code d'invitation requis." }),
-});
-
-export type InvitationCodeInput = z.infer<typeof invitationCodeSchema>;

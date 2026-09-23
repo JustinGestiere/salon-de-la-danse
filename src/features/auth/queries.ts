@@ -53,12 +53,3 @@ export async function getVolunteerForEdition(userId: string, editionId: string) 
     },
   });
 }
-
-/// Un e-mail est-il deja pris ? Sert au controle d'unicite a l'inscription.
-export async function isEmailTaken(email: string): Promise<boolean> {
-  const existing = await db.user.findUnique({
-    where: { email: email.toLowerCase() },
-    select: { id: true },
-  });
-  return existing !== null;
-}

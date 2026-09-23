@@ -43,5 +43,3 @@ export const auth = betterAuth({
   // Ecrit les cookies de session depuis les Server Actions.
   plugins: [nextCookies()],
 });
-
-export type Auth = typeof auth;
