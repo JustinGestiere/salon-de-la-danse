@@ -78,6 +78,15 @@ beforeEach(() => {
 });
 
 describe("toggleAssignment", () => {
+  it("refuses to remove a post assigned by an administrator", async () => {
+    fake.state.existing = { id: "as-1", source: "ADMIN" };
+
+    await expect(toggleAssignment(CONTEXT, "ms-caisse")).rejects.toMatchObject({
+      code: "assignment.adminAssigned",
+    });
+    expect(fake.tx.assignment.delete).not.toHaveBeenCalled();
+  });
+
   it("removes a post the volunteer booked themselves", async () => {
     fake.state.existing = { id: "as-1", source: "SELF" };
 

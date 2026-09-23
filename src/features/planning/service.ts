@@ -149,12 +149,21 @@ export async function toggleAssignment(
 
     const existing = await tx.assignment.findFirst({
       where: { volunteerId: context.volunteerId, missionSlotId },
-      select: { id: true },
+      select: { id: true, source: true },
     });
 
     if (!existing) {
       await addAssignment(tx, context, missionSlotId);
       return { selected: true };
+    }
+
+    // Un poste attribué par un administrateur (Billetterie, Caisse,
+    // outrepassement) ne se retire pas en libre-service.
+    if (existing.source === "ADMIN") {
+      throw new DomainError(
+        "assignment.adminAssigned",
+        "Cette mission vous a été attribuée par l'équipe. Contactez un administrateur pour la modifier.",
+      );
     }
 
     await tx.assignment.delete({ where: { id: existing.id } });
