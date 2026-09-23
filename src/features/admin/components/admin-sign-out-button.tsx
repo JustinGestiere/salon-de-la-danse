@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 import { signOut } from "@/lib/auth-client";
+import { ADMIN_LOGIN_PATH } from "@/features/admin/navigation";
 
 export function AdminSignOutButton() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export function AdminSignOutButton() {
   function handleSignOut(): void {
     startTransition(async () => {
       await signOut();
-      router.push("/connexion");
+      router.push(ADMIN_LOGIN_PATH);
       router.refresh();
     });
   }

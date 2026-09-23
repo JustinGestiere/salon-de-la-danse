@@ -26,9 +26,29 @@ const serverEnvSchema = z.object({
   BETTER_AUTH_URL: z.string().url(),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   UPLOAD_DIR: z.string().min(1),
+  // Envoi des e-mails (réinitialisation du mot de passe). Facultatif en
+  // développement, où la page de demande prévient que l'envoi est indisponible.
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  MAIL_FROM: z.string().min(1).optional(),
 });
 
-const parsed = serverEnvSchema.safeParse(process.env);
+/// En production, un bénévole qui a perdu son mot de passe doit pouvoir le
+/// réinitialiser seul : l'envoi d'e-mails devient obligatoire.
+const MAIL_VARIABLES = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "MAIL_FROM"] as const;
+
+const envSchema = serverEnvSchema.superRefine((value, context) => {
+  if (value.NODE_ENV !== "production") return;
+  for (const name of MAIL_VARIABLES) {
+    if (!value[name]) {
+      context.addIssue({ code: "custom", path: [name], message: "obligatoire en production" });
+    }
+  }
+});
+
+const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
   const details = parsed.error.issues

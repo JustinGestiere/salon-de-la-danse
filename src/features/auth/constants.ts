@@ -20,3 +20,11 @@ export function isAcceptedPhotoMimeType(mimeType: string): mimeType is AcceptedP
 /// des codes d'invitation en série.
 export const REGISTRATION_MAX_ATTEMPTS = 10;
 export const REGISTRATION_WINDOW_MINUTES = 15;
+
+/// Demandes de lien de réinitialisation par adresse IP et par fenêtre : de quoi
+/// réessayer après une faute de frappe, sans permettre d'inonder une boîte.
+export const PASSWORD_RESET_MAX_ATTEMPTS = 5;
+export const PASSWORD_RESET_WINDOW_MINUTES = 15;
+
+/// Durée de validité du lien reçu par e-mail.
+export const PASSWORD_RESET_TOKEN_TTL_MINUTES = 60;

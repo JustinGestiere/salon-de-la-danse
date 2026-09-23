@@ -64,3 +64,23 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const passwordResetRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email({ message: "E-mail invalide." }),
+});
+
+export type PasswordResetRequestInput = z.infer<typeof passwordResetRequestSchema>;
+
+/// Mêmes exigences de mot de passe qu'à l'inscription.
+export const passwordResetSchema = z
+  .object({
+    token: z.string().trim().min(1, { message: "Lien de réinitialisation invalide." }),
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas.",
+    path: ["confirmPassword"],
+  });
+
+export type PasswordResetInput = z.infer<typeof passwordResetSchema>;

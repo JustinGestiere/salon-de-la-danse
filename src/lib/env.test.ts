@@ -38,4 +38,21 @@ describe("env", () => {
       "BETTER_AUTH_SECRET",
     );
   });
+
+  it("refuses to start in production without a mail server for password resets", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    await expect(loadEnvWith({})).rejects.toThrow("SMTP_HOST");
+  });
+
+  it("starts in production once the mail server is configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("SMTP_HOST", "smtp.mail.ovh.net");
+    vi.stubEnv("SMTP_PORT", "465");
+    vi.stubEnv("SMTP_USER", "benevoles@example.org");
+    vi.stubEnv("SMTP_PASSWORD", "mot-de-passe-de-test");
+    vi.stubEnv("MAIL_FROM", "Salon de la Danse <benevoles@example.org>");
+
+    await expect(loadEnvWith({})).resolves.toBeDefined();
+  });
 });

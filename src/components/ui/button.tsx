@@ -9,11 +9,10 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-600 text-white hover:bg-brand-700 disabled:bg-brand-200",
-  secondary:
-    "bg-white text-brand-700 border border-brand-200 hover:bg-brand-50 disabled:text-gray-400",
-  ghost: "bg-transparent text-brand-700 hover:bg-brand-50",
-  danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300",
+    "bg-sunset text-on-accent font-semibold shadow-[0_10px_30px_var(--admin-glow)] hover:brightness-105",
+  secondary: "border border-line-strong text-ink hover:bg-raised",
+  ghost: "text-muted hover:bg-raised hover:text-ink",
+  danger: "border border-danger/60 text-danger-ink hover:bg-danger-soft",
 };
 
 export function Button({
@@ -29,7 +28,8 @@ export function Button({
     <button
       type={type}
       disabled={disabled || isLoading}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${className}`}
+      aria-busy={isLoading || undefined}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${VARIANT_CLASSES[variant]} ${className}`}
       {...rest}
     >
       {isLoading ? "Veuillez patienter…" : children}

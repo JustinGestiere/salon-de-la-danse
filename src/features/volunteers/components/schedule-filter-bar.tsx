@@ -6,6 +6,9 @@ import { formatEventDateShort } from "@/lib/format";
 
 export type FilterOption = { value: string; label: string };
 
+const SELECT_CLASS =
+  "min-h-11 w-full rounded-2xl border border-line-strong bg-canvas px-3 text-sm font-normal text-ink";
+
 type ScheduleFilterBarProps = {
   days: string[];
   missions: FilterOption[];
@@ -26,13 +29,13 @@ export function ScheduleFilterBar({ days, missions, positions }: ScheduleFilterB
   const printHref = `/recapitulatif/impression?${searchParams.toString()}`;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4">
-      <p className="text-sm font-semibold text-gray-800">Filtrer l'export</p>
+    <div className="flex flex-col gap-4 rounded-3xl border border-line bg-surface p-5">
+      <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">Filtrer l'export</p>
       <div className="grid gap-3 sm:grid-cols-3">
-        <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-soft">
           Jour
           <select
-            className="min-h-11 rounded-lg border border-gray-300 bg-white px-2 text-sm"
+            className={SELECT_CLASS}
             value={searchParams.get("day") ?? ""}
             onChange={(event) => update("day", event.target.value)}
           >
@@ -45,10 +48,10 @@ export function ScheduleFilterBar({ days, missions, positions }: ScheduleFilterB
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-soft">
           Mission
           <select
-            className="min-h-11 rounded-lg border border-gray-300 bg-white px-2 text-sm"
+            className={SELECT_CLASS}
             value={searchParams.get("mission") ?? ""}
             onChange={(event) => update("mission", event.target.value)}
           >
@@ -61,10 +64,10 @@ export function ScheduleFilterBar({ days, missions, positions }: ScheduleFilterB
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-soft">
           Créneau
           <select
-            className="min-h-11 rounded-lg border border-gray-300 bg-white px-2 text-sm"
+            className={SELECT_CLASS}
             value={searchParams.get("position") ?? ""}
             onChange={(event) => update("position", event.target.value)}
           >
@@ -82,7 +85,7 @@ export function ScheduleFilterBar({ days, missions, positions }: ScheduleFilterB
         href={printHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"
+        className="bg-sunset inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-on-accent shadow-[0_10px_30px_var(--admin-glow)] transition hover:brightness-105"
       >
         Exporter / imprimer en PDF
       </a>

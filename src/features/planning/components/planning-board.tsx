@@ -130,12 +130,12 @@ export function PlanningBoard({
 
       {days.map((day) => (
         <section key={day.eventDate} className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold capitalize text-gray-900">
+          <h2 className="font-display text-3xl capitalize leading-none text-ink">
             {formatEventDateLong(day.eventDate)}
           </h2>
           {day.timeSlots.map((timeSlot) => (
-            <div key={timeSlot.id} className="rounded-xl border border-gray-200 bg-white p-3">
-              <p className="mb-2 text-sm font-semibold text-brand-700">
+            <div key={timeSlot.id} className="rounded-3xl border border-line bg-surface p-4">
+              <p className="mb-3 font-code text-sm text-accent">
                 {formatTimeRange(new Date(timeSlot.startsAtIso), new Date(timeSlot.endsAtIso))}
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -160,13 +160,13 @@ export function PlanningBoard({
         </section>
       ))}
 
-      <div className="sticky bottom-0 flex flex-col gap-2 border-t border-gray-200 bg-white/95 py-3 backdrop-blur">
-        <p className="text-sm text-gray-600">
+      <div className="sticky bottom-0 -mx-4 flex flex-col gap-3 border-t border-line bg-canvas/95 px-4 py-4 backdrop-blur">
+        <p className="text-sm text-muted">
           {selectedCells.length} créneau{selectedCells.length > 1 ? "x" : ""} sélectionné
           {selectedCells.length > 1 ? "s" : ""} (max {rules.maxSlots}).
         </p>
         {violations.length > 0 ? (
-          <ul className="text-sm text-orange-700">
+          <ul className="text-sm text-warn-ink">
             {violations.map((violation) => (
               <li key={violation.code}>• {violation.message}</li>
             ))}
