@@ -1,5 +1,6 @@
 import "server-only";
 
+import { toIsoDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 
 export type ActiveEdition = {
@@ -48,7 +49,7 @@ export async function getEditionDays(editionId: string): Promise<string[]> {
     select: { eventDate: true },
     orderBy: { eventDate: "asc" },
   });
-  const days = new Set(timeSlots.map((slot) => slot.eventDate.toISOString().slice(0, 10)));
+  const days = new Set(timeSlots.map((slot) => toIsoDate(slot.eventDate)));
   return [...days];
 }
 

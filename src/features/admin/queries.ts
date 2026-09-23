@@ -1,5 +1,6 @@
 import "server-only";
 
+import { toIsoDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 
 export type AdminOverview = {
@@ -75,7 +76,7 @@ export async function getFillRates(
   const missions = new Map<string, FillRate & { position: number }>();
 
   for (const slot of slots) {
-    const isoDate = slot.timeSlot.eventDate.toISOString().slice(0, 10);
+    const isoDate = toIsoDate(slot.timeSlot.eventDate);
     const day = days.get(isoDate) ?? { key: isoDate, label: isoDate, capacity: 0, filled: 0 };
     day.capacity += slot.capacity;
     day.filled += slot._count.assignments;

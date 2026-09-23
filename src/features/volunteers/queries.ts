@@ -1,5 +1,6 @@
 import "server-only";
 
+import { toIsoDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 
 /// Nombre de créneaux réservés par un bénévole. Utilisé par le dashboard.
@@ -19,10 +20,6 @@ export type ScheduleEntry = {
   missionDescription: string | null;
   isAdminAssigned: boolean;
 };
-
-function toIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
 
 /// Récapitulatif ordonné des missions d'un bénévole (jour puis créneau). Sert
 /// au récapitulatif à l'écran comme à l'export imprimable.

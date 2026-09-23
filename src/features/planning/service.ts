@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
+import { toIsoDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { DomainError } from "@/lib/errors";
 import {
@@ -9,10 +10,6 @@ import {
   type SelectedCell,
   type SlotRules,
 } from "@/features/planning/rules";
-
-function toIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
 
 type VolunteerContext = {
   volunteerId: string;

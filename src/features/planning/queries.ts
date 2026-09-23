@@ -1,5 +1,6 @@
 import "server-only";
 
+import { toIsoDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { computeGaugeState, type GaugeState } from "@/features/planning/constants";
 
@@ -41,10 +42,6 @@ export type PlanningView = {
   cells: Record<string, PlanningCell>;
   selectedMissionSlotIds: string[];
 };
-
-function toIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
 
 function cellKey(missionId: string, timeSlotId: string): string {
   return `${missionId}:${timeSlotId}`;
