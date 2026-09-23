@@ -11,6 +11,10 @@ export const ACCEPTED_PHOTO_MIME_TYPES = [
 
 export type AcceptedPhotoMimeType = (typeof ACCEPTED_PHOTO_MIME_TYPES)[number];
 
+export function isAcceptedPhotoMimeType(mimeType: string): mimeType is AcceptedPhotoMimeType {
+  return ACCEPTED_PHOTO_MIME_TYPES.some((accepted) => accepted === mimeType);
+}
+
 /// Tentatives d'inscription autorisées par adresse IP et par fenêtre. Assez
 /// large pour quelques erreurs de saisie, assez bas pour empêcher d'essayer
 /// des codes d'invitation en série.

@@ -13,6 +13,8 @@ function createPrismaClient(): PrismaClient {
 
 // Un seul PrismaClient : en dev, chaque hot reload recreerait un client et
 // ouvrirait de nouvelles connexions. On le memorise donc sur globalThis.
+// Le cast est sûr : globalThis n'a pas de propriété prisma dans son type, on
+// la déclare ici et elle n'est lue ou écrite que par ce module.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

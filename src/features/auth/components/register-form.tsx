@@ -14,6 +14,12 @@ import { MAX_PHOTO_SIZE_MB } from "@/features/auth/constants";
 import { registerAction } from "@/features/auth/actions";
 import { registerSchema, type RegisterInput } from "@/features/auth/schemas";
 
+/// Les erreurs serveur arrivent indexées par des chaînes : seules celles qui
+/// correspondent à un champ du formulaire peuvent être affichées dessous.
+function isRegisterField(field: string): field is keyof RegisterInput {
+  return Object.hasOwn(registerSchema.shape, field);
+}
+
 function appendFields(formData: FormData, values: RegisterInput): void {
   formData.set("invitationCode", values.invitationCode);
   formData.set("firstName", values.firstName);
@@ -45,7 +51,7 @@ export function RegisterForm() {
     setFormError(null);
     setPhotoError(null);
 
-    const form = event?.target as HTMLFormElement | undefined;
+    const form = event?.target instanceof HTMLFormElement ? event.target : undefined;
     const photoInput = form?.elements.namedItem("photo");
     const photo =
       photoInput instanceof HTMLInputElement ? photoInput.files?.[0] : undefined;
@@ -75,8 +81,8 @@ export function RegisterForm() {
     if (fieldErrors?.photo?.[0]) setPhotoError(fieldErrors.photo[0]);
     if (fieldErrors) {
       for (const [field, messages] of Object.entries(fieldErrors)) {
-        if (field === "photo" || messages.length === 0) continue;
-        setError(field as keyof RegisterInput, { message: messages[0] });
+        if (!isRegisterField(field) || messages.length === 0) continue;
+        setError(field, { message: messages[0] });
       }
     }
     setFormError(message);

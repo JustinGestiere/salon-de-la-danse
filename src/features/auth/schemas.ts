@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import {
-  ACCEPTED_PHOTO_MIME_TYPES,
+  isAcceptedPhotoMimeType,
   MAX_PHOTO_SIZE_BYTES,
   MAX_PHOTO_SIZE_MB,
   MIN_PASSWORD_LENGTH,
@@ -54,11 +54,9 @@ export const photoSchema = z
   .refine((file) => file.size <= MAX_PHOTO_SIZE_BYTES, {
     message: `La photo ne doit pas dépasser ${MAX_PHOTO_SIZE_MB} Mo.`,
   })
-  .refine(
-    (file) =>
-      (ACCEPTED_PHOTO_MIME_TYPES as readonly string[]).includes(file.type),
-    { message: "Format accepté : JPEG, PNG ou WebP." },
-  );
+  .refine((file) => isAcceptedPhotoMimeType(file.type), {
+    message: "Format accepté : JPEG, PNG ou WebP.",
+  });
 
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email({ message: "E-mail invalide." }),

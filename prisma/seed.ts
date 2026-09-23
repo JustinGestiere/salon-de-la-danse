@@ -103,6 +103,15 @@ type FillCell = {
   taken: number;
 };
 
+/// Compte démo nommé, avec ses créneaux sous forme [jour ISO, rang du créneau].
+type NamedVolunteerSeed = {
+  email: string;
+  first: string;
+  badge: string;
+  locked: boolean;
+  slots: [string, number][];
+};
+
 type FillerRecord = {
   volunteerId: string;
   selection: SelectedCell[];
@@ -110,7 +119,10 @@ type FillerRecord = {
 
 function utc(isoDate: string, hour: number, minute: number): Date {
   const [year, month, day] = isoDate.split("-").map(Number);
-  return new Date(Date.UTC(year!, month! - 1, day!, hour - CEST_OFFSET_HOURS, minute));
+  if (year === undefined || month === undefined || day === undefined) {
+    throw new Error(`Date ISO invalide dans le seed : ${isoDate}`);
+  }
+  return new Date(Date.UTC(year, month - 1, day, hour - CEST_OFFSET_HOURS, minute));
 }
 
 /// Le hachage d'un mot de passe est volontairement coûteux. On ne le calcule
@@ -467,21 +479,21 @@ async function seedVolunteers(
   editionId: string,
   timeSlots: readonly TimeSlotRow[],
 ): Promise<void> {
-  const volunteers = [
-    { email: "benevole1@salon-danse.example", first: "Bruno", badge: "BEN-DEMO1", locked: false, slots: [] as [string, number][] },
+  const volunteers: NamedVolunteerSeed[] = [
+    { email: "benevole1@salon-danse.example", first: "Bruno", badge: "BEN-DEMO1", locked: false, slots: [] },
     {
       email: "benevole2@salon-danse.example",
       first: "Chloé",
       badge: "BEN-DEMO2",
       locked: false,
-      slots: [["2027-05-14", 1], ["2027-05-14", 3]] as [string, number][],
+      slots: [["2027-05-14", 1], ["2027-05-14", 3]],
     },
     {
       email: "benevole3@salon-danse.example",
       first: "David",
       badge: "BEN-DEMO3",
       locked: true,
-      slots: [["2027-05-15", 2], ["2027-05-16", 4]] as [string, number][],
+      slots: [["2027-05-15", 2], ["2027-05-16", 4]],
     },
   ];
 
