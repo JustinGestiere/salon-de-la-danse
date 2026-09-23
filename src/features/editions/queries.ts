@@ -1,22 +1,25 @@
 import "server-only";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { toIsoDate } from "@/lib/dates";
 import { db } from "@/lib/db";
 
-export type ActiveEdition = {
-  id: string;
-  name: string;
-  slug: string;
-  registrationOpensAt: Date;
-  registrationClosesAt: Date;
-  isRegistrationLocked: boolean;
-  minSlotsPerVolunteer: number;
-  maxSlotsPerVolunteer: number;
-  maxConsecutiveSlots: number;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  rulesMarkdown: string | null;
-};
+const activeEditionSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  registrationOpensAt: true,
+  registrationClosesAt: true,
+  isRegistrationLocked: true,
+  minSlotsPerVolunteer: true,
+  maxSlotsPerVolunteer: true,
+  maxConsecutiveSlots: true,
+  contactEmail: true,
+  contactPhone: true,
+  rulesMarkdown: true,
+} satisfies Prisma.EditionSelect;
+
+export type ActiveEdition = Prisma.EditionGetPayload<{ select: typeof activeEditionSelect }>;
 
 /// L'edition « courante » cote benevole : la plus recente non archivee. Le
 /// projet est mono-edition active a la fois, l'archivage sortant les anciennes.
@@ -24,20 +27,7 @@ export async function getActiveEdition(): Promise<ActiveEdition | null> {
   return db.edition.findFirst({
     where: { isArchived: false },
     orderBy: { registrationOpensAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      registrationOpensAt: true,
-      registrationClosesAt: true,
-      isRegistrationLocked: true,
-      minSlotsPerVolunteer: true,
-      maxSlotsPerVolunteer: true,
-      maxConsecutiveSlots: true,
-      contactEmail: true,
-      contactPhone: true,
-      rulesMarkdown: true,
-    },
+    select: activeEditionSelect,
   });
 }
 

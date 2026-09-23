@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { z } from "zod";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -37,19 +38,28 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   return parsed.data;
 }
 
+const volunteerParticipationSelect = {
+  id: true,
+  badgeNumber: true,
+  photoPath: true,
+  planningStatus: true,
+  lockedAt: true,
+  isProfileLocked: true,
+  minorApprovedAt: true,
+} satisfies Prisma.VolunteerSelect;
+
+export type VolunteerParticipation = Prisma.VolunteerGetPayload<{
+  select: typeof volunteerParticipationSelect;
+}>;
+
 /// Charge la participation du benevole a une edition. Utilise par le dashboard,
 /// le planning et le recapitulatif.
-export async function getVolunteerForEdition(userId: string, editionId: string) {
+export async function getVolunteerForEdition(
+  userId: string,
+  editionId: string,
+): Promise<VolunteerParticipation | null> {
   return db.volunteer.findUnique({
     where: { userId_editionId: { userId, editionId } },
-    select: {
-      id: true,
-      badgeNumber: true,
-      photoPath: true,
-      planningStatus: true,
-      lockedAt: true,
-      isProfileLocked: true,
-      minorApprovedAt: true,
-    },
+    select: volunteerParticipationSelect,
   });
 }

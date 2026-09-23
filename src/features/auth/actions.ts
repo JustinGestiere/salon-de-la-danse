@@ -55,7 +55,7 @@ export async function registerAction(
     return fail(
       "validation",
       "Veuillez corriger les champs indiqués.",
-      z_flatten(parsed.error),
+      toFieldErrors(parsed.error),
     );
   }
 
@@ -81,7 +81,9 @@ export async function registerAction(
   }
 }
 
-function z_flatten(error: {
+/// Regroupe les erreurs Zod par champ, pour les afficher sous chaque champ du
+/// formulaire.
+function toFieldErrors(error: {
   issues: { path: PropertyKey[]; message: string }[];
 }): Record<string, string[]> {
   const fieldErrors: Record<string, string[]> = {};

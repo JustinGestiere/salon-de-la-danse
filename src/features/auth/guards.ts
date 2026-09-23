@@ -2,7 +2,12 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
-import { getSessionUser, getVolunteerForEdition, type SessionUser } from "@/features/auth/queries";
+import {
+  getSessionUser,
+  getVolunteerForEdition,
+  type SessionUser,
+  type VolunteerParticipation,
+} from "@/features/auth/queries";
 import { getActiveEdition, type ActiveEdition } from "@/features/editions/queries";
 import { ADMIN_HOME_PATH } from "@/features/auth/redirects";
 
@@ -14,10 +19,6 @@ export async function requireSessionUser(): Promise<SessionUser> {
   if (!user) redirect("/connexion");
   return user;
 }
-
-export type VolunteerParticipation = NonNullable<
-  Awaited<ReturnType<typeof getVolunteerForEdition>>
->;
 
 export type VolunteerSession = {
   user: SessionUser;
