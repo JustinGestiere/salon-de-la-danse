@@ -1,15 +1,5 @@
 import type { Metadata } from "next";
 
-<<<<<<< HEAD
-import { Alert } from "@/components/ui/alert";
-import { Card, CardTitle } from "@/components/ui/card";
-import { formatEventDateLong } from "@/lib/format";
-import { FillRateBar } from "@/features/admin/components/fill-rate-bar";
-import { StatTile } from "@/features/admin/components/stat-tile";
-import { requireAdmin } from "@/features/admin/guards";
-import { getAdminOverview, getFillRates } from "@/features/admin/queries";
-import { getActiveEdition, isRegistrationOpen } from "@/features/editions/queries";
-=======
 import { AdminAlert } from "@/components/admin/admin-alert";
 import { CountdownHero } from "@/features/admin/components/countdown-hero";
 import { TodoList, type TodoItem } from "@/features/admin/components/todo-list";
@@ -20,21 +10,12 @@ import { getActiveEdition, getEditionStart, isRegistrationOpen, type ActiveEditi
 import { computePublicFillRate, countGridAlerts, sumPublicSeats, type GridAlerts } from "@/features/planning/admin-grid";
 import { getAdminGrid, type AdminGrid } from "@/features/planning/admin-queries";
 import { formatDateTime } from "@/lib/format";
->>>>>>> 54d844c (maj design)
 
 export const metadata: Metadata = {
   title: "Vue d'ensemble · Régie du Salon de la Danse",
 };
 
-<<<<<<< HEAD
-export default async function AdminDashboardPage() {
-  // Le layout ne suffit pas : il n'est pas réexécuté à chaque navigation et ne
-  // bloque pas le rendu de la page (doc Next « Layouts and auth checks »).
-  await requireAdmin();
-  const edition = await getActiveEdition();
-=======
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
->>>>>>> 54d844c (maj design)
 
 function computeDaysLeft(start: Date | null, now: Date): number | null {
   if (!start) return null;
