@@ -16,7 +16,6 @@ type PlanningContext = {
   volunteerId: string;
   editionId: string;
   rules: SlotRules;
-  planningStatus: "DRAFT" | "LOCKED";
 };
 
 /// Authentifie, vérifie les droits et la fenêtre d'inscription, puis renvoie le
@@ -50,7 +49,6 @@ async function resolvePlanningContext(): Promise<
     context: {
       volunteerId: volunteer.id,
       editionId: edition.id,
-      planningStatus: volunteer.planningStatus,
       rules: {
         minSlots: edition.minSlotsPerVolunteer,
         maxSlots: edition.maxSlotsPerVolunteer,
@@ -72,11 +70,7 @@ export async function toggleAssignmentAction(
   if (!resolved.ok) return resolved.error;
 
   try {
-    const result = await toggleAssignment(
-      resolved.context,
-      resolved.context.planningStatus,
-      parsed.data,
-    );
+    const result = await toggleAssignment(resolved.context, parsed.data);
     revalidatePath("/planning");
     return ok(result);
   } catch (error) {
@@ -91,7 +85,7 @@ export async function lockPlanningAction(): Promise<ActionResult> {
   if (!resolved.ok) return resolved.error;
 
   try {
-    await lockPlanning(resolved.context, resolved.context.planningStatus);
+    await lockPlanning(resolved.context);
     revalidatePath("/planning");
     revalidatePath("/recapitulatif");
     return ok(undefined);
