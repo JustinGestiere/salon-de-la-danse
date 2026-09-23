@@ -110,7 +110,7 @@ export async function getPlanningView(
   };
 }
 
-function groupTimeSlotsByDay(
+export function groupTimeSlotsByDay(
   timeSlots: readonly {
     id: string;
     eventDate: Date;

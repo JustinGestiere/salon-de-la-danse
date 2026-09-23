@@ -50,8 +50,13 @@ async function lockDraftPlanning(tx: Transaction, volunteerId: string): Promise<
 
 /// Charge la sélection courante du bénévole sous la forme attendue par les
 /// règles métier.
+<<<<<<< HEAD
 async function loadSelectedCells(tx: Transaction, volunteerId: string): Promise<SelectedCell[]> {
   const assignments = await tx.assignment.findMany({
+=======
+export async function loadSelectedCells(volunteerId: string): Promise<SelectedCell[]> {
+  const assignments = await db.assignment.findMany({
+>>>>>>> 54d844c (maj design)
     where: { volunteerId },
     select: {
       missionSlotId: true,
