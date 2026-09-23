@@ -13,6 +13,7 @@ const MIN_AUTH_SECRET_LENGTH = 32;
 const PLACEHOLDER_AUTH_SECRET = "change-me-in-production";
 
 const serverEnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().url(),
   BETTER_AUTH_SECRET: z
     .string()

@@ -11,6 +11,9 @@ import {
 
 loadEnv();
 
+// Le seed tourne hors de Next.js : il ne peut pas importer src/lib/env.ts
+// (marqué server-only) et lit donc directement la seule variable dont il a
+// besoin, chargée juste au-dessus par dotenv.
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error("DATABASE_URL manquant : impossible de semer la base.");
