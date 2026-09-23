@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getSessionUser, getVolunteerForEdition, type SessionUser } from "@/features/auth/queries";
 import { getActiveEdition, type ActiveEdition } from "@/features/editions/queries";
+import { ADMIN_HOME_PATH } from "@/features/auth/redirects";
 
 /// Impose une session. Redirige vers la connexion sinon. Utilisé par les pages
 /// de l'espace bénévole (barrière au plus près des données, pas seulement dans
@@ -31,7 +32,7 @@ export async function requireVolunteer(): Promise<VolunteerSession> {
   if (!edition) redirect("/connexion");
 
   const volunteer = await getVolunteerForEdition(user.id, edition.id);
-  if (!volunteer) redirect("/connexion");
+  if (!volunteer) redirect(user.role === "ADMIN" ? ADMIN_HOME_PATH : "/connexion");
 
   return { user, edition, volunteer };
 }

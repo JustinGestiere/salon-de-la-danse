@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { getSafeRedirectPath } from "./redirects";
+import {
+  ADMIN_HOME_PATH,
+  VOLUNTEER_HOME_PATH,
+  getHomePath,
+  getSafeRedirectPath,
+} from "./redirects";
 
 const FALLBACK = "/";
 
@@ -33,5 +38,15 @@ describe("getSafeRedirectPath", () => {
 
   it("rejects a javascript: URL", () => {
     expect(getSafeRedirectPath("javascript:alert(1)", FALLBACK)).toBe(FALLBACK);
+  });
+});
+
+describe("getHomePath", () => {
+  it("sends an administrator to the back-office", () => {
+    expect(getHomePath("ADMIN")).toBe(ADMIN_HOME_PATH);
+  });
+
+  it("sends a volunteer to the volunteer dashboard", () => {
+    expect(getHomePath("VOLUNTEER")).toBe(VOLUNTEER_HOME_PATH);
   });
 });
