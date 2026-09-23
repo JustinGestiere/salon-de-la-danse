@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Alert } from "@/components/ui/alert";
@@ -14,6 +14,7 @@ import {
   type SlotRules,
 } from "@/features/planning/rules";
 import type { GaugeState } from "@/features/planning/constants";
+import { SlotButton } from "@/features/planning/components/slot-button";
 
 export type BoardCell = {
   missionSlotId: string;
@@ -48,13 +49,7 @@ export type PlanningBoardProps = {
   cells: BoardCell[];
   initialSelected: string[];
   rules: SlotRules;
-  editable: boolean;
-};
-
-const GAUGE_STYLES: Record<GaugeState, string> = {
-  free: "border-gauge-free/40 bg-green-50 text-green-800",
-  tight: "border-gauge-tight/40 bg-orange-50 text-orange-800",
-  full: "border-gray-300 bg-gray-100 text-gray-500",
+  isEditable: boolean;
 };
 
 export function PlanningBoard({
@@ -63,25 +58,20 @@ export function PlanningBoard({
   cells,
   initialSelected,
   rules,
-  editable,
+  isEditable,
 }: PlanningBoardProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelected));
-  const [pending, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [notice, setNotice] = useState<string | null>(null);
 
-  const cellById = useMemo(() => indexCells(cells), [cells]);
-  const cellMetaBySlot = useMemo(() => buildCellMeta(days, cells), [days, cells]);
-  const missionById = useMemo(() => indexMissions(missions), [missions]);
-
-  const selectedCells = useMemo(
-    () => buildSelectedCells(selected, cellMetaBySlot),
-    [selected, cellMetaBySlot],
-  );
-  const violations = useMemo(
-    () => validateSelection(selectedCells, rules),
-    [selectedCells, rules],
-  );
+  // Calculés à chaque rendu, sans useMemo : la grille compte une centaine de
+  // cases au plus, aucun problème de performance n'a été constaté.
+  const cellById = indexCells(cells);
+  const cellMetaBySlot = buildCellMeta(days, cells);
+  const missionById = indexMissions(missions);
+  const selectedCells = buildSelectedCells(selected, cellMetaBySlot);
+  const violations = validateSelection(selectedCells, rules);
 
   function handleToggle(cell: BoardCell): void {
     setNotice(null);
@@ -132,7 +122,7 @@ export function PlanningBoard({
     });
   }
 
-  const canLock = editable && selectedCells.length > 0 && violations.length === 0;
+  const canLock = isEditable && selectedCells.length > 0 && violations.length === 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -159,7 +149,7 @@ export function PlanningBoard({
                       missionName={missionById.get(mission.id)?.name ?? ""}
                       missionLocation={missionById.get(mission.id)?.location ?? null}
                       isSelected={selected.has(cell.missionSlotId)}
-                      disabled={!editable || pending}
+                      isDisabled={!isEditable || isPending}
                       onToggle={handleToggle}
                     />
                   );
@@ -182,8 +172,8 @@ export function PlanningBoard({
             ))}
           </ul>
         ) : null}
-        {editable ? (
-          <Button onClick={handleLock} disabled={!canLock} isLoading={pending}>
+        {isEditable ? (
+          <Button onClick={handleLock} disabled={!canLock} isLoading={isPending}>
             Valider définitivement mon planning
           </Button>
         ) : (
@@ -191,49 +181,6 @@ export function PlanningBoard({
         )}
       </div>
     </div>
-  );
-}
-
-function SlotButton({
-  cell,
-  missionName,
-  missionLocation,
-  isSelected,
-  disabled,
-  onToggle,
-}: {
-  cell: BoardCell;
-  missionName: string;
-  missionLocation: string | null;
-  isSelected: boolean;
-  disabled: boolean;
-  onToggle: (cell: BoardCell) => void;
-}) {
-  const isFull = cell.remaining <= 0 && !isSelected;
-  return (
-    <button
-      type="button"
-      onClick={() => onToggle(cell)}
-      disabled={disabled || isFull}
-      aria-pressed={isSelected}
-      className={`flex min-h-16 flex-col items-start rounded-lg border p-2 text-left text-sm transition-colors disabled:cursor-not-allowed ${
-        isSelected
-          ? "border-brand-600 bg-brand-600 text-white"
-          : GAUGE_STYLES[cell.gauge]
-      }`}
-    >
-      <span className="font-semibold">{missionName}</span>
-      {missionLocation ? (
-        <span className={isSelected ? "text-brand-100" : "text-current/70"}>{missionLocation}</span>
-      ) : null}
-      <span className="mt-1 text-xs">
-        {isSelected
-          ? "✓ Sélectionné"
-          : isFull
-            ? "Complet"
-            : `${cell.remaining} place${cell.remaining > 1 ? "s" : ""}`}
-      </span>
-    </button>
   );
 }
 

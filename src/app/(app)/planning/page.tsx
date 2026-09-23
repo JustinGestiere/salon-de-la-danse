@@ -16,7 +16,7 @@ export default async function PlanningPage() {
   const { edition, volunteer } = await requireVolunteer();
   const view = await getPlanningView(edition.id, volunteer.id);
 
-  const editable =
+  const isEditable =
     isRegistrationOpen(edition) && volunteer.planningStatus === "DRAFT";
 
   const days: BoardDay[] = view.days.map((day) => ({
@@ -61,7 +61,7 @@ export default async function PlanningPage() {
             maxSlots: edition.maxSlotsPerVolunteer,
             maxConsecutive: edition.maxConsecutiveSlots,
           }}
-          editable={editable}
+          isEditable={isEditable}
         />
       )}
     </div>
