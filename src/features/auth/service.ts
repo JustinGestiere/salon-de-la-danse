@@ -139,6 +139,19 @@ function isUniqueBadgeCollision(error: unknown): boolean {
   );
 }
 
+/// Annule une inscription interrompue : libère le code d'invitation s'il a
+/// été consommé par cette inscription, puis supprime le compte (participation
+/// et sessions partent en cascade).
+async function rollbackRegistration(userId: string, invitationId: string): Promise<void> {
+  await db.$transaction([
+    db.invitationCode.updateMany({
+      where: { id: invitationId, usedByVolunteer: { userId } },
+      data: { usedAt: null, usedByVolunteerId: null },
+    }),
+    db.user.deleteMany({ where: { id: userId } }),
+  ]);
+}
+
 /// Point d'entrée métier de l'inscription bénévole.
 export async function registerVolunteer(
   input: RegisterInput,
@@ -157,9 +170,17 @@ export async function registerVolunteer(
     });
     return { volunteerId };
   } catch (error) {
-    // Le compte a été créé mais la participation a échoué : on le supprime pour
-    // ne pas laisser un utilisateur orphelin qui bloquerait l'unicité e-mail.
-    await db.user.delete({ where: { id: userId } }).catch(() => undefined);
+    // Le compte a été créé mais l'inscription a échoué : on l'annule pour ne
+    // pas laisser un utilisateur orphelin (qui bloquerait l'unicité e-mail) ni
+    // un code d'invitation consommé pour rien. L'erreur d'origine reste celle
+    // renvoyée ; un échec de l'annulation est loggé avec son contexte.
+    await rollbackRegistration(userId, invitation.id).catch((rollbackError: unknown) => {
+      console.error(
+        "[registerVolunteer] échec de l'annulation de l'inscription",
+        { userId, invitationId: invitation.id },
+        rollbackError,
+      );
+    });
     throw error;
   }
 }
