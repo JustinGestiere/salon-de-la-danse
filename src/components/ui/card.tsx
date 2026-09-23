@@ -8,14 +8,12 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section
-      className={`rounded-xl border border-gray-200 bg-white p-5 shadow-sm ${className}`}
-    >
+    <section className={`rounded-3xl border border-line bg-surface p-6 ${className}`}>
       {children}
     </section>
   );
 }
 
 export function CardTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-3 text-lg font-semibold text-gray-900">{children}</h2>;
+  return <h2 className="mb-4 font-display text-2xl leading-none text-ink">{children}</h2>;
 }

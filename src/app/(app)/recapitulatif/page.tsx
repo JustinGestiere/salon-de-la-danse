@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { formatEventDateLong, formatTimeRange } from "@/lib/format";
 import { requireVolunteer } from "@/features/auth/guards";
 import { getVolunteerSchedule, type ScheduleEntry } from "@/features/volunteers/queries";
@@ -52,14 +53,18 @@ export default async function RecapPage({ searchParams }: { searchParams: Search
   const days = [...new Set(schedule.map((entry) => entry.eventDate))];
 
   return (
-    <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mon récapitulatif</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Badge <span className="font-mono font-semibold">{volunteer.badgeNumber}</span> ·{" "}
-          {volunteer.planningStatus === "LOCKED" ? "Planning validé" : "Brouillon"}
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        kicker="Mon récapitulatif"
+        title="Vos missions"
+        emphasis="du Salon"
+        description={
+          <>
+            Badge <span className="font-code text-ink">{volunteer.badgeNumber}</span> ·{" "}
+            {volunteer.planningStatus === "LOCKED" ? "Planning validé" : "Brouillon"}
+          </>
+        }
+      />
 
       {schedule.length === 0 ? (
         <Alert tone="info">
@@ -82,26 +87,27 @@ export default async function RecapPage({ searchParams }: { searchParams: Search
                   <Card>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-gray-900">{entry.missionName}</p>
-                        <p className="text-sm capitalize text-gray-600">
+                        <p className="font-display text-2xl leading-tight text-ink">{entry.missionName}</p>
+                        <p className="mt-1 text-sm capitalize text-ink-soft">
                           {formatEventDateLong(entry.eventDate)}
                         </p>
-                        <p className="text-sm text-brand-700">
+                        <p className="font-code text-sm text-accent">
                           {formatTimeRange(entry.startsAt, entry.endsAt)}
                         </p>
                         {entry.missionLocation ? (
-                          <p className="text-sm text-gray-500">{entry.missionLocation}</p>
+                          <p className="text-sm text-muted">{entry.missionLocation}</p>
                         ) : null}
                       </div>
                       {entry.isAdminAssigned ? (
-                        <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-lilac-soft px-2.5 py-1 text-xs font-medium text-lilac-ink">
+                          <span aria-hidden="true" className="size-1.5 rounded-full bg-lilac" />
                           Attribué
                         </span>
                       ) : null}
                     </div>
                     {entry.missionDescription ? (
-                      <p className="mt-2 border-t border-gray-100 pt-2 text-sm text-gray-600">
-                        <span className="font-medium">Consignes : </span>
+                      <p className="mt-4 border-t border-line pt-3 text-sm text-muted">
+                        <span className="font-medium text-ink-soft">Consignes : </span>
                         {entry.missionDescription}
                       </p>
                     ) : null}

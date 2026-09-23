@@ -8,6 +8,10 @@ import { adminAc, userAc } from "better-auth/plugins/admin/access";
 
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { PASSWORD_RESET_TOKEN_TTL_MINUTES } from "@/features/auth/constants";
+import { sendPasswordResetEmail } from "@/features/auth/password-reset-mailer";
+
+const SECONDS_PER_MINUTE = 60;
 
 /// Configuration serveur de Better Auth. C'est la seule source d'auth du
 /// projet : aucun hash de mot de passe ni gestion de session faits main.
@@ -20,14 +24,24 @@ export const auth = betterAuth({
   // - /sign-up/email : l'inscription est strictement conditionnée au code
   //   d'invitation et ne passe que par la Server Action registerAction ;
   // - /update-user : une fois validées, les informations personnelles ne sont
-  //   modifiables que par un administrateur (cahier des charges).
-  disabledPaths: ["/sign-up/email", "/update-user"],
+  //   modifiables que par un administrateur (cahier des charges) ;
+  // - /request-password-reset et /reset-password : le mot de passe oublié passe
+  //   par des Server Actions, qui limitent les tentatives et imposent les mêmes
+  //   règles de mot de passe qu'à l'inscription.
+  disabledPaths: ["/sign-up/email", "/update-user", "/request-password-reset", "/reset-password"],
   emailAndPassword: {
     enabled: true,
     // La verification d'e-mail se fait par code d'invitation en amont ; on ne
     // bloque donc pas la connexion sur un e-mail non verifie.
     requireEmailVerification: false,
     minPasswordLength: 10,
+    resetPasswordTokenExpiresIn: PASSWORD_RESET_TOKEN_TTL_MINUTES * SECONDS_PER_MINUTE,
+    // Un mot de passe réinitialisé ferme les sessions ouvertes ailleurs, au cas
+    // où quelqu'un d'autre se serait servi de l'ancien.
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, token }) => {
+      await sendPasswordResetEmail({ userId: user.id, email: user.email, token });
+    },
   },
   user: {
     // Champs metier exposes a Better Auth. Ils vivent sur la table user.

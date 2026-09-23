@@ -89,7 +89,7 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
       {formError ? <Alert tone="error">{formError}</Alert> : null}
 
       <TextField
@@ -115,7 +115,7 @@ export function RegisterForm() {
       />
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="photo" className="text-sm font-medium text-gray-800">
+        <label htmlFor="photo" className="text-sm font-medium text-ink-soft">
           Photo d'identité
         </label>
         <input
@@ -123,12 +123,12 @@ export function RegisterForm() {
           name="photo"
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+          className="min-h-11 w-full rounded-2xl border border-line-strong bg-canvas px-4 py-2 text-sm text-ink file:mr-3 file:rounded-full file:border-0 file:bg-raised file:px-3 file:py-1 file:text-sm file:text-ink"
         />
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-subtle">
           Obligatoire pour l'édition du badge. JPEG, PNG ou WebP, {MAX_PHOTO_SIZE_MB} Mo max.
         </p>
-        {photoError ? <p className="text-xs font-medium text-red-600">{photoError}</p> : null}
+        {photoError ? <p className="text-xs font-medium text-danger-ink">{photoError}</p> : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -136,31 +136,31 @@ export function RegisterForm() {
         <TextField label="Confirmer le mot de passe" type="password" autoComplete="new-password" error={errors.confirmPassword?.message} {...register("confirmPassword")} />
       </div>
 
-      <label className="flex items-start gap-2 text-sm text-gray-700">
-        <input type="checkbox" className="mt-1 size-4" {...register("acceptTerms")} />
+      <label className="flex items-start gap-3 text-sm text-ink-soft">
+        <input type="checkbox" className="mt-0.5 size-4 accent-[var(--admin-accent)]" {...register("acceptTerms")} />
         <span>
           J'accepte les{" "}
-          <Link href="/cgu" className="font-semibold text-brand-700" target="_blank">
+          <Link href="/cgu" className="font-medium text-accent underline-offset-4 hover:underline" target="_blank">
             CGU
           </Link>{" "}
           et la{" "}
-          <Link href="/confidentialite" className="font-semibold text-brand-700" target="_blank">
+          <Link href="/confidentialite" className="font-medium text-accent underline-offset-4 hover:underline" target="_blank">
             politique de confidentialité (RGPD)
           </Link>
           .
         </span>
       </label>
       {errors.acceptTerms ? (
-        <p className="-mt-2 text-xs font-medium text-red-600">{errors.acceptTerms.message}</p>
+        <p className="-mt-3 text-xs font-medium text-danger-ink">{errors.acceptTerms.message}</p>
       ) : null}
 
-      <Button type="submit" isLoading={isSubmitting}>
+      <Button type="submit" isLoading={isSubmitting} className="mt-1 w-full">
         Créer mon compte bénévole
       </Button>
 
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-sm text-muted">
         Déjà inscrit ?{" "}
-        <Link href="/connexion" className="font-semibold text-brand-700">
+        <Link href="/connexion" className="font-medium text-accent underline-offset-4 hover:underline">
           Se connecter
         </Link>
       </p>

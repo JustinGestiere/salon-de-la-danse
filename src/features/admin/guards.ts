@@ -3,6 +3,7 @@ import "server-only";
 import { notFound, redirect } from "next/navigation";
 
 import { db } from "@/lib/db";
+import { ADMIN_LOGIN_PATH } from "@/features/admin/navigation";
 import { getSessionUser, type SessionUser } from "@/features/auth/queries";
 import { getActiveEdition, type ActiveEdition } from "@/features/editions/queries";
 
@@ -27,7 +28,7 @@ async function isAdmin(userId: string): Promise<boolean> {
 /// n'a pas à lui être confirmée.
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await getSessionUser();
-  if (!user) redirect("/connexion");
+  if (!user) redirect(ADMIN_LOGIN_PATH);
   if (!(await isAdmin(user.id))) notFound();
 
   return { ...user, role: "ADMIN" };

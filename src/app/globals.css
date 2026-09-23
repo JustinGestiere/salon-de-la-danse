@@ -38,12 +38,13 @@ body {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Back-office : thème « crépuscule », en sombre et en clair.                 */
+/* Thème « crépuscule », en sombre et en clair : régie et espace bénévole.   */
 /* ------------------------------------------------------------------------ */
 /* Les utilitaires ci-dessous pointent vers des variables définies seulement  */
-/* sous .admin-theme : l'espace bénévole, qui ne porte pas cette classe, n'est */
-/* pas touché. `inline` fait lire la variable au niveau de l'élément, ce qui  */
-/* permet de basculer de palette sans régénérer les classes.                  */
+/* sous .admin-theme (régie) et .volunteer-theme (espace bénévole). Les pages */
+/* qui ne portent aucune des deux classes (impressions, pages légales) ne     */
+/* sont pas touchées. `inline` fait lire la variable au niveau de l'élément,  */
+/* ce qui permet de basculer de palette sans régénérer les classes.           */
 @theme inline {
   --color-canvas: var(--admin-bg);
   --color-surface: var(--admin-surface);
@@ -75,12 +76,12 @@ body {
   --font-code: var(--font-admin-mono);
 }
 
-/* Dégradé coucher de soleil : le seul accent fort du back-office. */
+/* Dégradé coucher de soleil : le seul accent fort du thème. */
 @utility bg-sunset {
   background-image: linear-gradient(90deg, var(--admin-rose), var(--admin-peach));
 }
 
-.admin-theme {
+:is(.admin-theme, .volunteer-theme) {
   /* Palette sombre, valeur par défaut. */
   --admin-bg: #120a1e;
   --admin-surface: #1a1129;
@@ -118,7 +119,7 @@ body {
 
 /* Palette claire : appliquée quand l'utilisateur la choisit, ou quand il */
 /* suit le système et que celui-ci est en clair.                          */
-.admin-theme[data-theme="light"] {
+:is(.admin-theme, .volunteer-theme)[data-theme="light"] {
   --admin-bg: #fbf6f1;
   --admin-surface: #ffffff;
   --admin-raised: #f5ede6;
@@ -151,7 +152,7 @@ body {
 }
 
 @media (prefers-color-scheme: light) {
-  .admin-theme[data-theme="system"] {
+  :is(.admin-theme, .volunteer-theme)[data-theme="system"] {
     --admin-bg: #fbf6f1;
     --admin-surface: #ffffff;
     --admin-raised: #f5ede6;
@@ -184,7 +185,7 @@ body {
   }
 }
 
-.admin-theme :where(a, button, input, select, textarea, summary):focus-visible {
+:is(.admin-theme, .volunteer-theme) :where(a, button, input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--admin-accent);
   outline-offset: 2px;
 }

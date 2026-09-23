@@ -3,6 +3,8 @@ import type { UserRole } from "@/generated/prisma/enums";
 /// Page d'entrée : elle renvoie chaque utilisateur vers l'espace de son rôle.
 export const ENTRY_PATH = "/";
 export const LOGIN_PATH = "/connexion";
+export const FORGOT_PASSWORD_PATH = "/mot-de-passe-oublie";
+export const RESET_PASSWORD_PATH = "/reinitialiser-mot-de-passe";
 export const VOLUNTEER_HOME_PATH = "/tableau-de-bord";
 export const ADMIN_HOME_PATH = "/admin/tableau-de-bord";
 

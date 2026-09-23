@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Alert } from "@/components/ui/alert";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireVolunteer } from "@/features/auth/guards";
 import { isRegistrationOpen } from "@/features/editions/queries";
 import { getPlanningView } from "@/features/planning/queries";
@@ -39,14 +40,13 @@ export default async function PlanningPage() {
   }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Composez votre planning</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Touchez une mission pour la réserver. Vert : places disponibles, orange : bientôt
-          complet, gris : complet.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        kicker="Planning"
+        title="Composez votre"
+        emphasis="planning"
+        description="Touchez une mission pour la réserver. Vert : places disponibles, orange : bientôt complet, gris : complet."
+      />
 
       {view.days.length === 0 ? (
         <Alert tone="info">La grille des créneaux n'est pas encore publiée.</Alert>

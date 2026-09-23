@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 import { requireAdmin } from "@/features/admin/guards";
 import { AdminTopBar } from "@/features/admin/components/admin-top-bar";
-import { ADMIN_FONT_VARIABLES } from "@/features/admin/fonts";
+import { THEME_FONT_VARIABLES } from "@/lib/fonts";
 import { ADMIN_THEME_COOKIE, parseAdminTheme } from "@/features/admin/theme";
 import { getActiveEdition, isRegistrationOpen } from "@/features/editions/queries";
 
@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const theme = parseAdminTheme(cookieStore.get(ADMIN_THEME_COOKIE)?.value);
 
   return (
-    <div data-theme={theme} className={`admin-theme ${ADMIN_FONT_VARIABLES} min-h-dvh font-admin`}>
+    <div data-theme={theme} className={`admin-theme ${THEME_FONT_VARIABLES} min-h-dvh font-admin`}>
       <a
         href="#contenu"
         className="sr-only rounded-full bg-surface px-4 py-2 text-sm focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-30"
