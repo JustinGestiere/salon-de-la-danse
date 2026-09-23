@@ -10,3 +10,9 @@ export const ACCEPTED_PHOTO_MIME_TYPES = [
 ] as const;
 
 export type AcceptedPhotoMimeType = (typeof ACCEPTED_PHOTO_MIME_TYPES)[number];
+
+/// Tentatives d'inscription autorisées par adresse IP et par fenêtre. Assez
+/// large pour quelques erreurs de saisie, assez bas pour empêcher d'essayer
+/// des codes d'invitation en série.
+export const REGISTRATION_MAX_ATTEMPTS = 10;
+export const REGISTRATION_WINDOW_MINUTES = 15;

@@ -1,20 +1,45 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { db } from "@/lib/db";
 import { isDomainError } from "@/lib/errors";
 import { fail, ok, type ActionResult } from "@/lib/result";
+import {
+  REGISTRATION_MAX_ATTEMPTS,
+  REGISTRATION_WINDOW_MINUTES,
+} from "@/features/auth/constants";
+import { createRateLimiter, getClientIp } from "@/features/auth/rate-limit";
 import { photoSchema, registerSchema } from "@/features/auth/schemas";
 import { registerVolunteer } from "@/features/auth/service";
+
+const MS_PER_MINUTE = 60_000;
+
+const registrationLimiter = createRateLimiter({
+  maxAttempts: REGISTRATION_MAX_ATTEMPTS,
+  windowMs: REGISTRATION_WINDOW_MINUTES * MS_PER_MINUTE,
+});
 
 function toBoolean(value: FormDataEntryValue | null): boolean {
   return value === "on" || value === "true";
 }
 
-/// Server Action d'inscription. Ordre imposé : validation Zod, puis service.
-/// Une Server Action est un endpoint public : rien n'est présumé de l'appelant.
+/// Server Action d'inscription. Ordre imposé : limitation, validation Zod, puis
+/// service. Une Server Action est un endpoint public : rien n'est présumé de
+/// l'appelant.
 export async function registerAction(
   formData: FormData,
 ): Promise<ActionResult<{ volunteerId: string }>> {
+  // Avant toute validation : chaque tentative compte, y compris les codes
+  // d'invitation inventés qu'un attaquant essaierait en série.
+  const clientIp = getClientIp(await headers());
+  if (!registrationLimiter.tryConsume(clientIp)) {
+    return fail(
+      "rateLimit.exceeded",
+      `Trop de tentatives. Réessayez dans ${REGISTRATION_WINDOW_MINUTES} minutes.`,
+    );
+  }
+
   const parsed = registerSchema.safeParse({
     invitationCode: formData.get("invitationCode"),
     firstName: formData.get("firstName"),
