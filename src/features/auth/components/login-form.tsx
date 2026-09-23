@@ -10,6 +10,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { signIn } from "@/lib/auth-client";
+import { getSafeRedirectPath } from "@/features/auth/redirects";
 import { loginSchema, type LoginInput } from "@/features/auth/schemas";
 
 export function LoginForm() {
@@ -33,7 +34,7 @@ export function LoginForm() {
       setFormError("E-mail ou mot de passe incorrect.");
       return;
     }
-    const next = searchParams.get("suivant") ?? "/tableau-de-bord";
+    const next = getSafeRedirectPath(searchParams.get("suivant"), "/tableau-de-bord");
     router.push(next);
     router.refresh();
   }
