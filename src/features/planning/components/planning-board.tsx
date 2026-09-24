@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { FluentIcon } from "@/components/ui/fluent-icon";
 import { formatEventDateLong, formatTimeRange } from "@/lib/format";
 import { toggleAssignmentAction, lockPlanningAction } from "@/features/planning/actions";
 import {
@@ -166,9 +167,12 @@ export function PlanningBoard({
           {selectedCells.length > 1 ? "s" : ""} (max {rules.maxSlots}).
         </p>
         {violations.length > 0 ? (
-          <ul className="text-sm text-warn-ink">
+          <ul className="flex flex-col gap-1.5 text-sm text-warn-ink">
             {violations.map((violation) => (
-              <li key={violation.code}>• {violation.message}</li>
+              <li key={violation.code} className="flex items-start gap-2">
+                <FluentIcon name="warning" className="mt-px size-4" />
+                {violation.message}
+              </li>
             ))}
           </ul>
         ) : null}

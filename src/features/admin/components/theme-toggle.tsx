@@ -2,6 +2,7 @@
 
 import { useOptimistic, useTransition } from "react";
 
+import { FluentIcon } from "@/components/ui/fluent-icon";
 import { setAdminThemeAction } from "@/features/admin/actions";
 import {
   ADMIN_THEME_LABELS,
@@ -9,11 +10,18 @@ import {
   type AdminTheme,
 } from "@/features/admin/theme";
 
-const ICON_PATHS: Record<AdminTheme, string> = {
-  system: "M3 5h18v11H3zM8 20h8M12 16v4",
-  light: "M12 4V2M12 22v-2M4.9 4.9 3.5 3.5M20.5 20.5l-1.4-1.4M4 12H2M22 12h-2M4.9 19.1l-1.4 1.4M20.5 3.5l-1.4 1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
-  dark: "M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z",
-};
+// Le jeu Fluent Color n'a pas de lune : le thème sombre garde son icône au trait.
+const MOON_PATH = "M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z";
+
+function ThemeIcon({ theme }: { theme: AdminTheme }) {
+  if (theme === "system") return <FluentIcon name="laptop" className="size-5" />;
+  if (theme === "light") return <FluentIcon name="weather-sunny-low" className="size-5" />;
+  return (
+    <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={MOON_PATH} />
+    </svg>
+  );
+}
 
 /// Bascule système → clair → sombre. L'affichage change tout de suite, le
 /// cookie suit en arrière-plan.
@@ -40,9 +48,7 @@ export function ThemeToggle({ theme }: { theme: AdminTheme }) {
       title={ADMIN_THEME_LABELS[optimisticTheme]}
       className="grid size-10 place-items-center rounded-full text-muted transition hover:bg-raised hover:text-ink"
     >
-      <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d={ICON_PATHS[optimisticTheme]} />
-      </svg>
+      <ThemeIcon theme={optimisticTheme} />
     </button>
   );
 }

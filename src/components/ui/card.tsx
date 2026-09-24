@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import { FluentIcon } from "@/components/ui/fluent-icon";
+import type { FluentIconName } from "@/components/ui/fluent-icon-data";
+
 export function Card({
   children,
   className = "",
@@ -14,6 +17,11 @@ export function Card({
   );
 }
 
-export function CardTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-4 font-display text-2xl leading-none text-ink">{children}</h2>;
+export function CardTitle({ children, icon }: { children: ReactNode; icon?: FluentIconName }) {
+  return (
+    <h2 className="mb-4 flex items-center gap-3 font-display text-2xl leading-none text-ink">
+      {icon ? <FluentIcon name={icon} className="size-7" /> : null}
+      {children}
+    </h2>
+  );
 }

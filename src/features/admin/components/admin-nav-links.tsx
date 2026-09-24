@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { FluentIcon } from "@/components/ui/fluent-icon";
 import { ADMIN_NAV_LINKS } from "@/features/admin/navigation";
 
 /// Seul morceau client de la barre : il lui faut l'URL courante pour marquer
@@ -19,10 +20,11 @@ export function AdminNavLinks() {
             key={link.href}
             href={link.href}
             aria-current={isActive ? "page" : undefined}
-            className={`relative flex min-h-11 shrink-0 items-center whitespace-nowrap px-2.5 text-sm transition ${
+            className={`relative flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap px-2.5 text-sm transition ${
               isActive ? "font-semibold text-ink" : "text-muted hover:text-ink"
             }`}
           >
+            <FluentIcon name={link.icon} className="size-[18px]" />
             {link.label}
             <span
               aria-hidden="true"

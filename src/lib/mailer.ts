@@ -11,6 +11,9 @@ export type MailMessage = {
   html: string;
 };
 
+/// Nom affiché devant l'adresse d'envoi quand MAIL_FROM n'est pas renseigné.
+const DEFAULT_SENDER_NAME = "Salon de la Danse";
+
 /// Port du SMTP chiffré dès la connexion (OVH : 465). Les autres ports
 /// (587, 1025 de Mailpit) passent en chiffrement négocié ou en clair.
 const SMTPS_PORT = 465;
@@ -31,15 +34,17 @@ const transporter =
       })
     : null;
 
+const sender = env.MAIL_FROM ?? (env.SMTP_USER ? `${DEFAULT_SENDER_NAME} <${env.SMTP_USER}>` : null);
+
 export function isMailerConfigured(): boolean {
-  return transporter !== null && Boolean(env.MAIL_FROM);
+  return transporter !== null && sender !== null;
 }
 
 /// Envoie un e-mail depuis l'adresse de l'application. Lève une erreur si
 /// l'envoi n'est pas configuré ou si le serveur SMTP refuse le message.
 export async function sendMail(message: MailMessage): Promise<void> {
-  if (!transporter || !env.MAIL_FROM) {
-    throw new Error("Envoi d'e-mails non configuré (SMTP_HOST, SMTP_PORT, MAIL_FROM).");
+  if (!transporter || !sender) {
+    throw new Error("Envoi d'e-mails non configuré (SMTP_HOST, SMTP_PORT, SMTP_USER ou MAIL_FROM).");
   }
-  await transporter.sendMail({ from: env.MAIL_FROM, ...message });
+  await transporter.sendMail({ from: sender, ...message });
 }
