@@ -11,8 +11,13 @@ import { ADMIN_NAV_LINKS } from "@/features/admin/navigation";
 export function AdminNavLinks() {
   const pathname = usePathname();
 
+  // overflow-x-auto force aussi overflow-y à auto : on coupe l'axe vertical et
+  // on masque la barre pour garder le défilement tactile sans ascenseur visible.
   return (
-    <nav aria-label="Navigation principale" className="-mx-1 flex gap-1 overflow-x-auto lg:gap-2">
+    <nav
+      aria-label="Navigation principale"
+      className="-mx-1 flex gap-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] lg:gap-2"
+    >
       {ADMIN_NAV_LINKS.map((link) => {
         const isActive = pathname.startsWith(link.href);
         return (
@@ -28,7 +33,7 @@ export function AdminNavLinks() {
             {link.label}
             <span
               aria-hidden="true"
-              className={`absolute inset-x-2.5 -bottom-px h-0.5 rounded-full ${isActive ? "bg-sunset" : "bg-transparent"}`}
+              className={`absolute inset-x-2.5 bottom-0 h-0.5 rounded-full ${isActive ? "bg-sunset" : "bg-transparent"}`}
             />
           </Link>
         );
