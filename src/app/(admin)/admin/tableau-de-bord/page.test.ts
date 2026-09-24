@@ -12,6 +12,12 @@ vi.mock("@/features/admin/queries", () => ({
 vi.mock("@/features/planning/admin-queries", () => ({
   getAdminGrid: vi.fn(),
 }));
+vi.mock("@/features/notifications/queries", () => ({
+  countCampaignRecipients: vi.fn(),
+}));
+vi.mock("@/features/notifications/components/reminder-panel", () => ({
+  ReminderPanel: vi.fn(),
+}));
 vi.mock("@/features/editions/queries", () => ({
   getActiveEdition,
   getEditionStart: vi.fn(),

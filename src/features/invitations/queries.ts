@@ -17,6 +17,7 @@ export type InvitationRow = {
   createdAt: Date;
   expiresAt: Date | null;
   usedAt: Date | null;
+  sentAt: Date | null;
   volunteerName: string | null;
   badgeNumber: string | null;
 };
@@ -100,6 +101,7 @@ export async function listInvitations(
         createdAt: true,
         expiresAt: true,
         usedAt: true,
+        sentAt: true,
         usedByVolunteer: {
           select: {
             badgeNumber: true,
@@ -118,6 +120,7 @@ export async function listInvitations(
     createdAt: record.createdAt,
     expiresAt: record.expiresAt,
     usedAt: record.usedAt,
+    sentAt: record.sentAt,
     volunteerName: record.usedByVolunteer
       ? `${record.usedByVolunteer.user.firstName} ${record.usedByVolunteer.user.lastName}`
       : null,

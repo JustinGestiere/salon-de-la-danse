@@ -48,3 +48,16 @@ export async function sendMail(message: MailMessage): Promise<void> {
   }
   await transporter.sendMail({ from: sender, ...message });
 }
+
+/// Envoi « au mieux » pour les notifications : un e-mail qui échoue ne doit
+/// jamais annuler l'action qui l'a déclenché (inscription, validation...).
+/// L'échec est loggé avec son contexte, jamais avec le contenu du message.
+export async function trySendMail(message: MailMessage, context: Record<string, string>): Promise<boolean> {
+  try {
+    await sendMail(message);
+    return true;
+  } catch (error) {
+    console.error("[trySendMail] envoi impossible", { ...context, error });
+    return false;
+  }
+}

@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { isDomainError } from "@/lib/errors";
 import { fail, ok, type ActionResult } from "@/lib/result";
 import { getSessionUser, getVolunteerForEdition } from "@/features/auth/queries";
 import { getActiveEdition, isRegistrationOpen } from "@/features/editions/queries";
+import { sendPlanningConfirmationEmail } from "@/features/notifications/service";
 import { lockPlanning, toggleAssignment } from "@/features/planning/service";
 import type { SlotRules } from "@/features/planning/rules";
 
@@ -88,6 +90,9 @@ export async function lockPlanningAction(): Promise<ActionResult> {
     await lockPlanning(resolved.context);
     revalidatePath("/planning");
     revalidatePath("/recapitulatif");
+    // Envoyé après la réponse : le bénévole n'attend pas le serveur SMTP.
+    const { volunteerId } = resolved.context;
+    after(() => sendPlanningConfirmationEmail(volunteerId));
     return ok(undefined);
   } catch (error) {
     if (isDomainError(error)) return fail(error.code, error.message);

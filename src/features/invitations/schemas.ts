@@ -65,6 +65,10 @@ export const deleteInvitationSchema = z.object({
   invitationId: z.string().trim().min(1),
 });
 
+export const resendInvitationSchema = z.object({
+  invitationId: z.string().trim().min(1),
+});
+
 /// Filtres de la liste, lus depuis l'URL : l'état partageable ne vit pas dans
 /// un state local.
 export const invitationFilterSchema = z.object({

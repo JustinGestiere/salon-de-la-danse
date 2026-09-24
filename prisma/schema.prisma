@@ -245,6 +245,10 @@ model InvitationCode {
   expiresAt DateTime? @map("expires_at")
   usedAt    DateTime? @map("used_at")
 
+  /// Dernier envoi réussi du code par e-mail. Null tant qu'il n'a jamais été
+  /// envoyé (code anonyme, ou envoi en échec).
+  sentAt DateTime? @map("sent_at")
+
   usedByVolunteerId String? @unique @map("used_by_volunteer_id")
 
   createdAt DateTime @default(now()) @map("created_at")

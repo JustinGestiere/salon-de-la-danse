@@ -32,7 +32,12 @@ function appendFields(formData: FormData, values: RegisterInput): void {
   formData.set("acceptTerms", values.acceptTerms ? "true" : "false");
 }
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  /// Code lu dans le lien de l'e-mail d'invitation, vide sinon.
+  defaultInvitationCode: string;
+};
+
+export function RegisterForm({ defaultInvitationCode }: RegisterFormProps) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -42,7 +47,10 @@ export function RegisterForm() {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { invitationCode: defaultInvitationCode },
+  });
 
   async function onSubmit(
     values: RegisterInput,
