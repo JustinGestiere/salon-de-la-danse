@@ -7,6 +7,7 @@ import {
   type InvitationStatus,
 } from "@/features/invitations/constants";
 import { DeleteInvitationButton } from "@/features/invitations/components/delete-invitation-button";
+import { ResendInvitationButton } from "@/features/invitations/components/resend-invitation-button";
 import type { InvitationRow } from "@/features/invitations/queries";
 
 const STATUS_TONES: Record<InvitationStatus, StatusTone> = {
@@ -32,11 +33,16 @@ function formatDate(value: Date): string {
   }).format(value);
 }
 
+function describeDelivery(row: InvitationRow): string {
+  if (!row.email) return "";
+  return row.sentAt ? ` · envoyé le ${formatDate(row.sentAt)}` : " · pas encore envoyé";
+}
+
 function describeRow(row: InvitationRow): string {
   if (row.status === "used" && row.volunteerName) return `Compte créé par ${row.volunteerName}`;
   if (row.status === "expired" && row.expiresAt) return `Expiré le ${formatDate(row.expiresAt)}`;
   const expiry = row.expiresAt ? ` · expire le ${formatDate(row.expiresAt)}` : "";
-  return `Émis le ${formatDate(row.createdAt)}${expiry}`;
+  return `Émis le ${formatDate(row.createdAt)}${expiry}${describeDelivery(row)}`;
 }
 
 type InvitationTableProps = {
@@ -70,7 +76,7 @@ export function InvitationTable({ rows }: InvitationTableProps) {
               <span className="text-xs text-subtle">{describeRow(row)}</span>
             </div>
             <StatusPill tone={STATUS_TONES[row.status]}>{INVITATION_STATUS_LABELS[row.status]}</StatusPill>
-            <div className="flex min-w-32 justify-end">
+            <div className="flex min-w-32 flex-wrap justify-end gap-2">
               {row.status === "used" && row.badgeNumber ? (
                 <Link
                   href={`/admin/benevoles?q=${encodeURIComponent(row.badgeNumber)}`}
@@ -79,6 +85,7 @@ export function InvitationTable({ rows }: InvitationTableProps) {
                   Voir la fiche →
                 </Link>
               ) : null}
+              {row.status === "available" && row.email ? <ResendInvitationButton invitationId={row.id} /> : null}
               {row.status !== "used" ? (
                 <DeleteInvitationButton invitationId={row.id} code={row.code} />
               ) : null}

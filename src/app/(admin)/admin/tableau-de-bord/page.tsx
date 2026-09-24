@@ -8,6 +8,8 @@ import { WeekendHeatmap } from "@/features/admin/components/weekend-heatmap";
 import { requireAdmin } from "@/features/admin/guards";
 import { getAdminOverview, type AdminOverview } from "@/features/admin/queries";
 import { getActiveEdition, getEditionStart, isRegistrationOpen, type ActiveEdition } from "@/features/editions/queries";
+import { ReminderPanel } from "@/features/notifications/components/reminder-panel";
+import { countCampaignRecipients } from "@/features/notifications/queries";
 import { computePublicFillRate, countGridAlerts, sumPublicSeats, type GridAlerts } from "@/features/planning/admin-grid";
 import { getAdminGrid, type AdminGrid } from "@/features/planning/admin-queries";
 import { formatDateTime } from "@/lib/format";
@@ -75,7 +77,11 @@ export default async function AdminOverviewPage() {
   }
 
   const eventStart = await getEditionStart(edition.id);
-  const [overview, grid] = await Promise.all([getAdminOverview(edition.id, eventStart), getAdminGrid(edition.id)]);
+  const [overview, grid, reminderCounts] = await Promise.all([
+    getAdminOverview(edition.id, eventStart),
+    getAdminGrid(edition.id),
+    countCampaignRecipients(edition.id),
+  ]);
 
   const sensitive = new Set(grid.missions.filter((mission) => !mission.isSelfBookable).map((mission) => mission.id));
   const cells = Object.values(grid.cells);
@@ -95,7 +101,10 @@ export default async function AdminOverviewPage() {
       <TroupeFunnel segments={buildFunnel(overview)} />
       <div className="grid items-start gap-12 xl:grid-cols-[minmax(0,1fr)_480px]">
         <WeekendHeatmap grid={grid} dayFillRates={computeDayFillRates(grid, sensitive)} />
-        <TodoList items={buildTodos(overview, countGridAlerts(cells, sensitive), edition.registrationClosesAt)} />
+        <div className="flex flex-col gap-12">
+          <TodoList items={buildTodos(overview, countGridAlerts(cells, sensitive), edition.registrationClosesAt)} />
+          <ReminderPanel recipientCounts={reminderCounts} />
+        </div>
       </div>
     </div>
   );

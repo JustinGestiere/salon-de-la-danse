@@ -9,6 +9,7 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "x-forwarded-for": "203.0.113.7" }),
 }));
 vi.mock("@/features/auth/service", () => ({ registerVolunteer }));
+vi.mock("@/features/notifications/service", () => ({ sendWelcomeEmail: vi.fn() }));
 
 const { registerAction } = await import("./actions");
 

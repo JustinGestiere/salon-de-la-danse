@@ -8,6 +8,7 @@ import {
   INVITATION_CODE_PREFIX,
   MAX_CODE_GENERATION_ATTEMPTS,
 } from "@/features/invitations/constants";
+import type { InvitationToSend } from "@/features/invitations/email-service";
 
 type GenerateInvitationCodesInput = {
   editionId: string;
@@ -55,9 +56,15 @@ async function reserveUniqueCodes(count: number): Promise<string[]> {
   return [...codes];
 }
 
+export type GeneratedInvitations = {
+  created: number;
+  /// Codes nominatifs du lot, à envoyer par e-mail.
+  recipients: InvitationToSend[];
+};
+
 export async function generateInvitationCodes(
   input: GenerateInvitationCodesInput,
-): Promise<{ created: number }> {
+): Promise<GeneratedInvitations> {
   if (input.recipients.length === 0) {
     throw new DomainError("invitation.empty", "Aucun code à générer.");
   }
@@ -65,14 +72,15 @@ export async function generateInvitationCodes(
   const codes = await reserveUniqueCodes(input.recipients.length);
   const namedCount = input.recipients.filter((email) => email !== null).length;
 
-  await db.$transaction([
-    db.invitationCode.createMany({
+  const [createdCodes] = await db.$transaction([
+    db.invitationCode.createManyAndReturn({
       data: codes.map((code, index) => ({
         editionId: input.editionId,
         code,
         email: input.recipients[index] ?? null,
         expiresAt: input.expiresAt,
       })),
+      select: { id: true, code: true, email: true, expiresAt: true },
     }),
     db.auditLog.create({
       data: {
@@ -90,7 +98,10 @@ export async function generateInvitationCodes(
     }),
   ]);
 
-  return { created: codes.length };
+  const recipients = createdCodes.flatMap((invitation) =>
+    invitation.email ? [{ ...invitation, email: invitation.email }] : [],
+  );
+  return { created: codes.length, recipients };
 }
 
 /// Supprime un code encore libre. Un code consommé reste en base : il est le

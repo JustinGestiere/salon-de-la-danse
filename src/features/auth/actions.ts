@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 
 import { isDomainError } from "@/lib/errors";
 import { fail, ok, type ActionResult } from "@/lib/result";
@@ -11,6 +12,7 @@ import {
 import { createRateLimiter, getClientIp } from "@/features/auth/rate-limit";
 import { photoSchema, registerSchema } from "@/features/auth/schemas";
 import { registerVolunteer } from "@/features/auth/service";
+import { sendWelcomeEmail } from "@/features/notifications/service";
 
 const MS_PER_MINUTE = 60_000;
 
@@ -68,6 +70,8 @@ export async function registerAction(
 
   try {
     const result = await registerVolunteer(parsed.data, photoParsed.data);
+    // Envoyé après la réponse : l'inscription n'attend pas le serveur SMTP.
+    after(() => sendWelcomeEmail(result.volunteerId));
     return ok(result);
   } catch (error) {
     if (isDomainError(error)) {

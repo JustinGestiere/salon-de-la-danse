@@ -20,6 +20,14 @@ import {
 
 const DEFAULT_VALUES: GenerateInvitationsFormValues = { count: 10, emails: "", expiresAt: "" };
 
+function describeGeneration({ created, sent, failed }: { created: number; sent: number; failed: number }): string {
+  const generated = `${created} code${created > 1 ? "s" : ""} généré${created > 1 ? "s" : ""}`;
+  if (sent + failed === 0) return `${generated}.`;
+  const delivered = `${sent} e-mail${sent > 1 ? "s" : ""} envoyé${sent > 1 ? "s" : ""}`;
+  if (failed === 0) return `${generated}, ${delivered}.`;
+  return `${generated}, ${delivered}. ${failed} envoi${failed > 1 ? "s" : ""} en échec : utilisez « Renvoyer » dans le registre.`;
+}
+
 function pluralizeCodes(count: number): string {
   return count > 1 ? "codes à émettre" : "code à émettre";
 }
@@ -55,8 +63,7 @@ export function GenerateCodesForm() {
       return;
     }
 
-    const created = result.data.created;
-    setSuccessMessage(`${created} code${created > 1 ? "s" : ""} généré${created > 1 ? "s" : ""}.`);
+    setSuccessMessage(describeGeneration(result.data));
     reset(DEFAULT_VALUES);
     router.refresh();
   }
