@@ -1,3 +1,7 @@
+import { copyFile, mkdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { config as loadEnv } from "dotenv";
 import { hashPassword } from "better-auth/crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -19,7 +23,22 @@ if (!connectionString) {
   throw new Error("DATABASE_URL manquant : impossible de semer la base.");
 }
 
+const uploadDirFromEnv = process.env.UPLOAD_DIR;
+if (!uploadDirFromEnv) {
+  throw new Error("UPLOAD_DIR manquant : impossible de copier les photos de démonstration.");
+}
+// Recopiée dans une constante typée : TypeScript ne garde pas la vérification
+// ci-dessus à l'intérieur des fonctions.
+const uploadDir: string = uploadDirFromEnv;
+
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+
+/// Photo d'identité commune à tous les comptes de démonstration.
+const DEMO_PHOTO_SOURCE = fileURLToPath(new URL("../src/image/drole.jpeg", import.meta.url));
+
+/// Un bénévole fictif sur cinq reste sans photo : la régie doit pouvoir tester
+/// le compteur et la liste des photos manquantes.
+const FILLER_WITHOUT_PHOTO_EVERY = 5;
 
 const DEMO_PASSWORD = "SalonDemo2027!";
 const CEST_OFFSET_HOURS = 2; // Mai 2027 : Europe/Paris = UTC+2.
@@ -174,6 +193,15 @@ async function createUser(input: {
   return user.id;
 }
 
+/// Copie la photo de démonstration dans le dossier de stockage, sous le même
+/// nom que ferait l'inscription (<id du bénévole>.jpg), puis l'associe au
+/// bénévole.
+async function attachDemoPhoto(volunteerId: string, photoDir: string): Promise<void> {
+  const photoPath = path.join(photoDir, `${volunteerId}.jpg`);
+  await copyFile(DEMO_PHOTO_SOURCE, photoPath);
+  await db.volunteer.update({ where: { id: volunteerId }, data: { photoPath } });
+}
+
 async function resetDatabase(): Promise<void> {
   // Ordre respectant les clés étrangères. Réservé au seed de développement.
   await db.assignment.deleteMany();
@@ -303,6 +331,10 @@ async function seedFillerVolunteers(
       select: { id: true },
     });
 
+    if (index % FILLER_WITHOUT_PHOTO_EVERY !== 0) {
+      await attachDemoPhoto(volunteer.id, uploadDir);
+    }
+
     await db.invitationCode.create({
       data: {
         editionId,
@@ -376,6 +408,7 @@ async function seedAdminAssignments(
 
 async function main(): Promise<void> {
   await resetDatabase();
+  await mkdir(uploadDir, { recursive: true });
 
   const now = new Date();
   const edition = await db.edition.create({
@@ -520,6 +553,7 @@ async function seedVolunteers(
       },
       select: { id: true },
     });
+    await attachDemoPhoto(volunteer.id, uploadDir);
 
     for (const [day, position] of item.slots) {
       const timeSlot = timeSlots.find(
