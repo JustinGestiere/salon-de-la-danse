@@ -51,7 +51,6 @@ describe("env", () => {
     vi.stubEnv("SMTP_PORT", "465");
     vi.stubEnv("SMTP_USER", "benevoles@example.org");
     vi.stubEnv("SMTP_PASSWORD", "mot-de-passe-de-test");
-    vi.stubEnv("MAIL_FROM", "Salon de la Danse <benevoles@example.org>");
 
     await expect(loadEnvWith({})).resolves.toBeDefined();
   });

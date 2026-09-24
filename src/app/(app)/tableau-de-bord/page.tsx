@@ -48,7 +48,7 @@ export default async function DashboardPage() {
       )}
 
       <Card>
-        <CardTitle>Votre participation</CardTitle>
+        <CardTitle icon="contact-card">Votre participation</CardTitle>
         <dl className="grid grid-cols-2 gap-4">
           <div className="rounded-2xl bg-raised px-4 py-3">
             <dt className="text-xs uppercase tracking-[0.14em] text-subtle">Badge</dt>
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 sm:grid-cols-2">
         <Card>
-          <CardTitle>Dates du Salon</CardTitle>
+          <CardTitle icon="calendar">Dates du Salon</CardTitle>
           {days.length === 0 ? (
             <p className="text-sm text-muted">La grille des créneaux sera bientôt publiée.</p>
           ) : (
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
         </Card>
 
         <Card>
-          <CardTitle>Contacts</CardTitle>
+          <CardTitle icon="book-contacts">Contacts</CardTitle>
           <p className="text-sm leading-relaxed text-ink-soft">
             {edition.contactEmail ? (
               <>
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
       </div>
 
       <Card>
-        <CardTitle>Règles d'engagement</CardTitle>
+        <CardTitle icon="text-bullet-list-square">Règles d'engagement</CardTitle>
         <ul className="flex list-disc flex-col gap-2 pl-5 text-sm text-ink-soft marker:text-subtle">
           <li>Entre {edition.minSlotsPerVolunteer} et {edition.maxSlotsPerVolunteer} créneaux de 2h.</li>
           <li>Une seule mission par créneau.</li>

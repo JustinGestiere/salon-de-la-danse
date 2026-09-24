@@ -1,5 +1,6 @@
 "use client";
 
+import { FluentIcon } from "@/components/ui/fluent-icon";
 import type { GaugeState } from "@/features/planning/constants";
 import type { BoardCell } from "@/features/planning/components/planning-board";
 
@@ -50,11 +51,13 @@ export function SlotButton({
       <span className="font-semibold">{missionName}</span>
       {missionLocation ? <span className="opacity-80">{missionLocation}</span> : null}
       <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs">
-        {isSelected ? null : (
+        {isSelected ? (
+          <FluentIcon name="checkmark-circle" className="size-4" />
+        ) : (
           <span aria-hidden="true" className={`size-1.5 rounded-full ${GAUGE_DOTS[cell.gauge]}`} />
         )}
         {isSelected
-          ? "✓ Sélectionné"
+          ? "Sélectionné"
           : isFull
             ? "Complet"
             : `${cell.remaining} place${cell.remaining > 1 ? "s" : ""}`}

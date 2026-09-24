@@ -1,3 +1,4 @@
+import { FluentIcon } from "@/components/ui/fluent-icon";
 import type { RuleViolation, SlotRules } from "@/features/planning/rules";
 
 type RuleChecksProps = {
@@ -40,9 +41,7 @@ export function RuleChecks(props: RuleChecksProps) {
             check.isMet ? "bg-ok-soft text-ok-ink" : "bg-warn-soft text-warn-ink"
           }`}
         >
-          <span aria-hidden="true" className="font-semibold">
-            {check.isMet ? "✓" : "!"}
-          </span>
+          <FluentIcon name={check.isMet ? "checkmark-circle" : "warning"} className="size-4" />
           <span className="sr-only">{check.isMet ? "Respectée :" : "Non respectée :"}</span>
           {check.text}
         </li>

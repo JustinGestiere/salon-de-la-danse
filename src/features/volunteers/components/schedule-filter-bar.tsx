@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { FluentIcon } from "@/components/ui/fluent-icon";
 import { formatEventDateShort } from "@/lib/format";
 
 export type FilterOption = { value: string; label: string };
@@ -85,8 +86,9 @@ export function ScheduleFilterBar({ days, missions, positions }: ScheduleFilterB
         href={printHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="bg-sunset inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-on-accent shadow-[0_10px_30px_var(--admin-glow)] transition hover:brightness-105"
+        className="bg-sunset inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-on-accent shadow-[0_10px_30px_var(--admin-glow)] transition hover:brightness-105"
       >
+        <FluentIcon name="document-text" />
         Exporter / imprimer en PDF
       </a>
     </div>

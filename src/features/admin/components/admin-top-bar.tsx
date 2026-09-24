@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { FluentIcon } from "@/components/ui/fluent-icon";
 import { AdminNavLinks } from "@/features/admin/components/admin-nav-links";
 import { AdminSignOutButton } from "@/features/admin/components/admin-sign-out-button";
 import { ThemeToggle } from "@/features/admin/components/theme-toggle";
@@ -54,9 +55,7 @@ export function AdminTopBar({
             aria-label="Réglages"
             className="grid size-10 place-items-center rounded-full text-muted transition hover:bg-raised hover:text-ink"
           >
-            <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
-              <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
-            </svg>
+            <FluentIcon name="settings" className="size-5" />
           </Link>
           <ThemeToggle theme={theme} />
           <span
