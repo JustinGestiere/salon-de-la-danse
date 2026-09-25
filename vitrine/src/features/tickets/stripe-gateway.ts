@@ -2,13 +2,10 @@ import "server-only";
 
 import type Stripe from "stripe";
 
+import { getCheckoutSessionExpiry } from "@/features/tickets/checkout-expiry";
 import type { OrderLine, TicketQuantities } from "@/features/tickets/pricing";
 import { addQuantities, decodeQuantities, encodeQuantities } from "@/features/tickets/sales-metadata";
 import type { TicketTypeId } from "@/features/tickets/content";
-
-/// Durée de vie minimale acceptée par Stripe : une session abandonnée ne
-/// bloque pas longtemps un visiteur qui paierait après la fermeture.
-const CHECKOUT_SESSION_LIFETIME_SECONDS = 30 * 60;
 
 const CHECKOUT_PAGE_SIZE = 100;
 
@@ -17,7 +14,6 @@ type CreateCheckoutSessionParams = {
   quantities: TicketQuantities;
   editionYear: number;
   siteUrl: string;
-  now: Date;
   allowPromotionCodes: boolean;
 };
 
@@ -68,7 +64,7 @@ export async function createCheckoutSession(stripe: Stripe, params: CreateChecko
       },
     })),
     metadata: { edition: String(params.editionYear), quantities: encodeQuantities(params.quantities) },
-    expires_at: Math.floor(params.now.getTime() / 1000) + CHECKOUT_SESSION_LIFETIME_SECONDS,
+    expires_at: getCheckoutSessionExpiry(new Date()),
     success_url: `${params.siteUrl}/billetterie/merci?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${params.siteUrl}/billetterie?paiement=annule`,
   });

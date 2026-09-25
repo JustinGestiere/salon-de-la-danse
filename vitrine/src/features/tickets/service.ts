@@ -16,6 +16,8 @@ import { createCheckoutSession, summarizePaidSales, type PaidSalesSummary } from
 type StartCheckoutParams = {
   quantities: TicketQuantities;
   accessCode: string | undefined;
+  /// Heure de la billetterie (simulée en développement) : sert à choisir la
+  /// phase de vente, jamais à dater la session Stripe.
   now: Date;
 };
 
@@ -69,7 +71,6 @@ export async function startCheckout({ quantities, accessCode, now }: StartChecko
     quantities,
     editionYear: EDITION.year,
     siteUrl: env.SITE_URL,
-    now,
     allowPromotionCodes: !isDiscountCapReached(sales),
   });
 }
