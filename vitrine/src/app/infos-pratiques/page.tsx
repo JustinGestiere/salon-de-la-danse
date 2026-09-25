@@ -34,9 +34,13 @@ export default function PracticalInfoPage() {
               <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-lilac">Parking gratuit</dt>
               <dd className="text-muted">{VENUE.freeParking}</dd>
             </div>
-            <div className="flex flex-col gap-1 sm:col-span-2">
+            <div className="flex flex-col gap-1">
               <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-lilac">Parkings payants à proximité</dt>
               <dd className="text-muted">{VENUE.paidParkings.join(", ")}</dd>
+            </div>
+            <div className="flex flex-col gap-1">
+              <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-lilac">Train</dt>
+              <dd className="text-muted">{VENUE.train}</dd>
             </div>
           </dl>
         </div>

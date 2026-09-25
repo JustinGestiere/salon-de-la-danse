@@ -3,19 +3,17 @@ import { describe, expect, it } from "vitest";
 import { checkoutInputSchema, checkoutSessionIdSchema } from "@/features/tickets/schemas";
 
 const EMPTY_QUANTITIES = {
-  adultOneDay: 0,
-  adultTwoDays: 0,
-  reducedOneDay: 0,
-  reducedTwoDays: 0,
-  familyOneDay: 0,
-  familyTwoDays: 0,
-  openingCeremony: 0,
+  discoveryPass: 0,
+  passionPass: 0,
+  reducedDayPass: 0,
+  openingEvening: 0,
+  masterclassSession: 0,
 };
 
 describe("checkoutInputSchema", () => {
   it("accepts an order with at least one ticket and the terms accepted", () => {
     const result = checkoutInputSchema.safeParse({
-      quantities: { ...EMPTY_QUANTITIES, adultOneDay: 1 },
+      quantities: { ...EMPTY_QUANTITIES, discoveryPass: 1 },
       acceptsTermsOfSale: true,
     });
     expect(result.success).toBe(true);
@@ -28,7 +26,7 @@ describe("checkoutInputSchema", () => {
 
   it("rejects an order without the terms of sale", () => {
     const result = checkoutInputSchema.safeParse({
-      quantities: { ...EMPTY_QUANTITIES, adultOneDay: 1 },
+      quantities: { ...EMPTY_QUANTITIES, discoveryPass: 1 },
       acceptsTermsOfSale: false,
     });
     expect(result.success).toBe(false);
@@ -36,7 +34,7 @@ describe("checkoutInputSchema", () => {
 
   it("rejects more than ten tickets of the same type", () => {
     const result = checkoutInputSchema.safeParse({
-      quantities: { ...EMPTY_QUANTITIES, adultOneDay: 11 },
+      quantities: { ...EMPTY_QUANTITIES, discoveryPass: 11 },
       acceptsTermsOfSale: true,
     });
     expect(result.success).toBe(false);
@@ -44,13 +42,24 @@ describe("checkoutInputSchema", () => {
 
   it("strips a price sent by the browser", () => {
     const result = checkoutInputSchema.safeParse({
-      quantities: { ...EMPTY_QUANTITIES, adultOneDay: 1 },
+      quantities: { ...EMPTY_QUANTITIES, discoveryPass: 1 },
       acceptsTermsOfSale: true,
       unitPriceInCents: 1,
     });
 
     expect(result.success).toBe(true);
     expect(result.data).not.toHaveProperty("unitPriceInCents");
+  });
+});
+
+describe("checkoutInputSchema access code", () => {
+  it("trims the private sale access code", () => {
+    const result = checkoutInputSchema.safeParse({
+      quantities: { ...EMPTY_QUANTITIES, discoveryPass: 1 },
+      acceptsTermsOfSale: true,
+      accessCode: "  ECOLE2027  ",
+    });
+    expect(result.success && result.data.accessCode).toBe("ECOLE2027");
   });
 });
 

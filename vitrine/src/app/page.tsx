@@ -121,9 +121,9 @@ export default async function HomePage() {
         <div className="lg:col-span-2">
           <TicketsCta
             kicker={`Billetterie ${EDITION.year}`}
-            title="Une journée, le week-end,"
-            emphasis="ou toute la famille."
-            description="Billets à la journée ou deux jours, tarif réduit pour les 6-15 ans, étudiants et plus de 65 ans, pack famille. Gratuit pour les moins de 6 ans. Paiement sécurisé par carte."
+            title="Un jour ou le week-end,"
+            emphasis="gala du dimanche compris."
+            description="Pass Découverte 1 jour ou Pass Passion 2 jours, tarif réduit pour les scolaires, les moins de 25 ans et les demandeurs d'emploi. Gratuit pour les moins de 6 ans. Paiement sécurisé par carte."
             buttonLabel="Choisir mes billets"
           />
         </div>

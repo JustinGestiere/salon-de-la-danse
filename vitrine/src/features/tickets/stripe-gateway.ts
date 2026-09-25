@@ -2,7 +2,9 @@ import "server-only";
 
 import type Stripe from "stripe";
 
-import type { OrderLine } from "@/features/tickets/pricing";
+import type { OrderLine, TicketQuantities } from "@/features/tickets/pricing";
+import { addQuantities, decodeQuantities, encodeQuantities } from "@/features/tickets/sales-metadata";
+import type { TicketTypeId } from "@/features/tickets/content";
 
 /// Durée de vie minimale acceptée par Stripe : une session abandonnée ne
 /// bloque pas longtemps un visiteur qui paierait après la fermeture.
@@ -12,10 +14,17 @@ const CHECKOUT_PAGE_SIZE = 100;
 
 type CreateCheckoutSessionParams = {
   lines: readonly OrderLine[];
-  salonSeats: number;
+  quantities: TicketQuantities;
   editionYear: number;
   siteUrl: string;
   now: Date;
+  allowPromotionCodes: boolean;
+};
+
+export type PaidSalesSummary = {
+  quantities: Partial<Record<TicketTypeId, number>>;
+  grossInCents: number;
+  discountInCents: number;
 };
 
 export type PaidOrder = {
@@ -24,17 +33,23 @@ export type PaidOrder = {
   lines: { id: string; description: string; quantity: number; totalInCents: number }[];
 };
 
+const EMPTY_SUMMARY: PaidSalesSummary = { quantities: {}, grossInCents: 0, discountInCents: 0 };
+
 /// Pas de base de données côté vitrine : Stripe est la source de vérité des
-/// ventes. Chaque session porte en métadonnées l'édition et le nombre de
-/// visiteurs qu'elle fait entrer.
-export async function sumPaidSalonSeats(stripe: Stripe, editionYear: number): Promise<number> {
-  let seats = 0;
+/// ventes. Chaque session porte en métadonnées l'édition et les quantités par
+/// type de billet ; les montants servent au plafond des codes promo.
+export async function summarizePaidSales(stripe: Stripe, editionYear: number): Promise<PaidSalesSummary> {
+  let summary = EMPTY_SUMMARY;
   for await (const session of stripe.checkout.sessions.list({ status: "complete", limit: CHECKOUT_PAGE_SIZE })) {
     if (session.payment_status !== "paid") continue;
     if (session.metadata?.edition !== String(editionYear)) continue;
-    seats += Number.parseInt(session.metadata.salonSeats ?? "0", 10) || 0;
+    summary = {
+      quantities: addQuantities(summary.quantities, decodeQuantities(session.metadata.quantities)),
+      grossInCents: summary.grossInCents + (session.amount_subtotal ?? 0),
+      discountInCents: summary.discountInCents + (session.total_details?.amount_discount ?? 0),
+    };
   }
-  return seats;
+  return summary;
 }
 
 /// Crée la page de paiement hébergée par Stripe et renvoie son adresse.
@@ -43,6 +58,7 @@ export async function createCheckoutSession(stripe: Stripe, params: CreateChecko
     mode: "payment",
     locale: "fr",
     submit_type: "pay",
+    allow_promotion_codes: params.allowPromotionCodes,
     line_items: params.lines.map((line) => ({
       quantity: line.quantity,
       price_data: {
@@ -51,7 +67,7 @@ export async function createCheckoutSession(stripe: Stripe, params: CreateChecko
         product_data: { name: `${line.label}, Salon de la Danse ${params.editionYear}` },
       },
     })),
-    metadata: { edition: String(params.editionYear), salonSeats: String(params.salonSeats) },
+    metadata: { edition: String(params.editionYear), quantities: encodeQuantities(params.quantities) },
     expires_at: Math.floor(params.now.getTime() / 1000) + CHECKOUT_SESSION_LIFETIME_SECONDS,
     success_url: `${params.siteUrl}/billetterie/merci?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${params.siteUrl}/billetterie?paiement=annule`,

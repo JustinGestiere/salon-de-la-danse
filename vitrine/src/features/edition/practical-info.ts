@@ -22,7 +22,7 @@ export const FAQ = [
   {
     id: "included",
     question: "Qu'est-ce qui est compris dans le billet ?",
-    answer: "Les stands, les démonstrations, les initiations, les conférences gratuites, le Just Dance et l'espace clubbing. Les masterclass et les conférences payantes se réservent en plus.",
+    answer: "Les stands, les démonstrations, les initiations, les conférences gratuites, le Just Dance, l'espace clubbing et, le dimanche, le gala de clôture dans la limite des places. Les masterclass s'ajoutent en option, par séance.",
   },
   {
     id: "masterclass",
@@ -37,6 +37,6 @@ export const FAQ = [
   {
     id: "reduced",
     question: "Qui a droit au tarif réduit ?",
-    answer: "Les 6-15 ans, les étudiants et les plus de 65 ans, sur présentation d'un justificatif à l'entrée.",
+    answer: "Les scolaires, les moins de 25 ans et les demandeurs d'emploi, sur présentation d'un justificatif à l'entrée. L'entrée est gratuite pour les moins de 6 ans.",
   },
 ] as const;

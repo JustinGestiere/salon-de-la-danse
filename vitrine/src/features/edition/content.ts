@@ -47,6 +47,8 @@ export const VENUE = {
   street: "33 boulevard Carnot",
   city: "49100 Angers",
   tram: "Arrêt « Centre de congrès », lignes A et B",
+  // Convention avec la Région prévue par le plan d'action 2027, pas encore signée.
+  train: "En projet pour 2027 : un billet TER Aléop à 5 € aller-retour avec la Région Pays de la Loire, depuis Nantes, Le Mans et les autres villes de l'Ouest.",
   paidParkings: ["Mail", "Place Leclerc", "Place Imbach"],
   freeParking: "La Rochefoucauld, à environ 12 minutes à pied",
 } as const;

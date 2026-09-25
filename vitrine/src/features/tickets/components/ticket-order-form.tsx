@@ -19,16 +19,16 @@ export type TicketOffer = {
 
 type TicketOrderFormProps = {
   offers: readonly TicketOffer[];
+  /// Vente privée : un code d'accès est demandé avant le paiement.
+  isPrivateSale: boolean;
 };
 
 const EMPTY_QUANTITIES: CheckoutInput["quantities"] = {
-  adultOneDay: 0,
-  adultTwoDays: 0,
-  reducedOneDay: 0,
-  reducedTwoDays: 0,
-  familyOneDay: 0,
-  familyTwoDays: 0,
-  openingCeremony: 0,
+  discoveryPass: 0,
+  passionPass: 0,
+  reducedDayPass: 0,
+  openingEvening: 0,
+  masterclassSession: 0,
 };
 
 /// Le total affiché n'est qu'indicatif : le serveur recalcule les prix avant
@@ -37,7 +37,7 @@ function getDisplayedTotal(offers: readonly TicketOffer[], quantities: CheckoutI
   return offers.reduce((total, offer) => total + offer.unitPriceInCents * (quantities[offer.id] || 0), 0);
 }
 
-export function TicketOrderForm({ offers }: TicketOrderFormProps) {
+export function TicketOrderForm({ offers, isPrivateSale }: TicketOrderFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const {
     control,
@@ -47,7 +47,7 @@ export function TicketOrderForm({ offers }: TicketOrderFormProps) {
     formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutInputSchema),
-    defaultValues: { quantities: EMPTY_QUANTITIES, acceptsTermsOfSale: false },
+    defaultValues: { quantities: EMPTY_QUANTITIES, acceptsTermsOfSale: false, accessCode: "" },
   });
   const quantities = useWatch({ control, name: "quantities" });
   const total = getDisplayedTotal(offers, quantities);
@@ -93,6 +93,24 @@ export function TicketOrderForm({ offers }: TicketOrderFormProps) {
           <span className="text-lg text-ink-soft">Total</span>
           <span className="font-display text-5xl text-ink" aria-live="polite">{formatEuros(total)}</span>
         </p>
+        {isPrivateSale ? (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="code-vente-privee" className="text-[15px] font-medium text-ink">
+              Code de vente privée
+            </label>
+            <input
+              id="code-vente-privee"
+              type="text"
+              autoComplete="off"
+              aria-describedby="code-vente-privee-aide"
+              className="h-12 rounded-2xl border border-line-strong bg-surface px-4 text-ink"
+              {...register("accessCode")}
+            />
+            <p id="code-vente-privee-aide" className="text-sm text-muted">
+              Transmis par votre club FFDanse ou votre école de danse.
+            </p>
+          </div>
+        ) : null}
         <label className="flex items-start gap-3 text-[15px] leading-relaxed text-ink-soft">
           <input type="checkbox" className="mt-1 size-5 shrink-0 accent-[var(--site-accent)]" {...register("acceptsTermsOfSale")} />
           <span>

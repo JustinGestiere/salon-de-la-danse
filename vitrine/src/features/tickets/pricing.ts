@@ -1,8 +1,10 @@
 import {
-  LOW_AVAILABILITY_RATIO,
-  SALE_PERIODS,
+  ON_SITE_SURCHARGE_IN_CENTS,
+  SALE_PHASES,
   TICKET_TYPES,
-  type SalePeriod,
+  type PriceTier,
+  type SalePhase,
+  type TicketType,
   type TicketTypeId,
 } from "@/features/tickets/content";
 
@@ -16,29 +18,40 @@ export type OrderLine = {
   totalInCents: number;
 };
 
-export type SeatAvailability = {
-  capacity: number;
-  seatsLeft: number;
-  isLow: boolean;
-  isSoldOut: boolean;
-};
+/// Où en est la billetterie en ligne à un instant donné.
+export type SaleStatus =
+  | { kind: "open"; phase: SalePhase }
+  | { kind: "upcoming"; nextPhase: SalePhase }
+  | { kind: "ended" };
 
-/// Période tarifaire en vigueur à cet instant. Au-delà de la dernière date,
-/// seule la vente sur place reste possible.
-export function getSalePeriod(now: Date): SalePeriod {
-  const current = SALE_PERIODS.find(
-    (period) => period.endsAt === null || now.getTime() < Date.parse(period.endsAt),
+export function getSaleStatus(now: Date): SaleStatus {
+  const time = now.getTime();
+  const openPhase = SALE_PHASES.find(
+    (phase) => Date.parse(phase.startsAt) <= time && time < Date.parse(phase.endsAt),
   );
-  // La dernière période n'a pas de fin : find() trouve toujours une entrée.
-  return current ?? SALE_PERIODS[SALE_PERIODS.length - 1]!;
+  if (openPhase) return { kind: "open", phase: openPhase };
+
+  const nextPhase = SALE_PHASES.find((phase) => time < Date.parse(phase.startsAt));
+  if (nextPhase) return { kind: "upcoming", nextPhase };
+
+  return { kind: "ended" };
 }
 
-/// Lignes de commande non vides, avec les prix de la période. Les prix ne
-/// viennent jamais du navigateur : seulement les quantités.
-export function buildOrderLines(quantities: TicketQuantities, period: SalePeriod): OrderLine[] {
+/// Dernier jour de vente d'une phase (sa fin est exclue).
+export function getPhaseLastDay(phase: SalePhase): Date {
+  return new Date(Date.parse(phase.endsAt) - 1);
+}
+
+export function getOnSitePriceInCents(ticketType: TicketType): number {
+  return ticketType.pricesInCents.fullPrice + ON_SITE_SURCHARGE_IN_CENTS;
+}
+
+/// Lignes de commande non vides, au tarif de la phase. Les prix ne viennent
+/// jamais du navigateur : seulement les quantités.
+export function buildOrderLines(quantities: TicketQuantities, priceTier: PriceTier): OrderLine[] {
   return TICKET_TYPES.filter((ticketType) => quantities[ticketType.id] > 0).map((ticketType) => {
     const quantity = quantities[ticketType.id];
-    const unitPriceInCents = ticketType.pricesInCents[period.id];
+    const unitPriceInCents = ticketType.pricesInCents[priceTier];
     return {
       ticketTypeId: ticketType.id,
       label: ticketType.label,
@@ -51,22 +64,4 @@ export function buildOrderLines(quantities: TicketQuantities, period: SalePeriod
 
 export function getOrderTotalInCents(lines: readonly OrderLine[]): number {
   return lines.reduce((total, line) => total + line.totalInCents, 0);
-}
-
-/// Visiteurs que la commande fait entrer au Salon (un pack famille compte 4).
-export function countSalonSeats(quantities: TicketQuantities): number {
-  return TICKET_TYPES.reduce(
-    (seats, ticketType) => seats + ticketType.salonSeats * quantities[ticketType.id],
-    0,
-  );
-}
-
-export function getSeatAvailability(capacity: number, seatsSold: number): SeatAvailability {
-  const seatsLeft = Math.max(0, capacity - seatsSold);
-  return {
-    capacity,
-    seatsLeft,
-    isLow: seatsLeft > 0 && seatsLeft / capacity <= LOW_AVAILABILITY_RATIO,
-    isSoldOut: seatsLeft === 0,
-  };
 }

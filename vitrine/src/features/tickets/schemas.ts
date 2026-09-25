@@ -9,13 +9,11 @@ const quantitySchema = z
   .max(MAX_QUANTITY_PER_TICKET_TYPE, `${MAX_QUANTITY_PER_TICKET_TYPE} billets maximum par tarif.`);
 
 export const ticketQuantitiesSchema = z.object({
-  adultOneDay: quantitySchema,
-  adultTwoDays: quantitySchema,
-  reducedOneDay: quantitySchema,
-  reducedTwoDays: quantitySchema,
-  familyOneDay: quantitySchema,
-  familyTwoDays: quantitySchema,
-  openingCeremony: quantitySchema,
+  discoveryPass: quantitySchema,
+  passionPass: quantitySchema,
+  reducedDayPass: quantitySchema,
+  openingEvening: quantitySchema,
+  masterclassSession: quantitySchema,
 });
 
 /// Même schéma pour le formulaire (React Hook Form) et la Server Action.
@@ -29,6 +27,8 @@ export const checkoutInputSchema = z.object({
   acceptsTermsOfSale: z.boolean().refine((isAccepted) => isAccepted, {
     message: "Acceptez les conditions générales de vente pour continuer.",
   }),
+  /// Code d'accès de la vente privée ; ignoré le reste du temps.
+  accessCode: z.string().trim().max(64, "Code trop long.").optional(),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutInputSchema>;

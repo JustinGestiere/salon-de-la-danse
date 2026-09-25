@@ -23,3 +23,8 @@ export function formatDate(value: Date): string {
 export function formatCount(value: number): string {
   return new Intl.NumberFormat("fr-FR").format(value);
 }
+
+/// « 31 mars ».
+export function formatDayMonth(value: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: EVENT_TIME_ZONE }).format(value);
+}

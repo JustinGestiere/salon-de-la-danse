@@ -1,5 +1,5 @@
 import { formatCount } from "@/lib/format";
-import type { SeatAvailability } from "@/features/tickets/pricing";
+import type { SeatAvailability } from "@/features/tickets/quotas";
 
 type SeatsGaugeProps = {
   availability: SeatAvailability;

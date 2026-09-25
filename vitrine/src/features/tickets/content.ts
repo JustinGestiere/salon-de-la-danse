@@ -1,102 +1,134 @@
-/// Grille tarifaire. Elle reprend les prix 2026 de l'association, décalés sur
-/// les dates 2027 : à faire valider avant l'ouverture de la billetterie.
-/// Tous les montants sont en centimes.
+/// Grille tarifaire 2027, d'après le plan d'action stratégique de
+/// l'association (grille p. 3, chantiers A1, A2 et A5). Montants en centimes.
 
-export const SALE_PERIOD_IDS = ["earlyBird", "presale", "onSite"] as const;
-export type SalePeriodId = (typeof SALE_PERIOD_IDS)[number];
+export const PRICE_TIERS = ["earlyBird", "fullPrice"] as const;
+export type PriceTier = (typeof PRICE_TIERS)[number];
 
-export type SalePeriod = {
-  id: SalePeriodId;
+/// Le guichet du Salon vend au plein tarif majoré : ce prix n'est qu'affiché.
+export const ON_SITE_SURCHARGE_IN_CENTS = 200;
+
+export const SALE_PHASE_IDS = ["privateSale", "earlyBird", "fullPrice"] as const;
+export type SalePhaseId = (typeof SALE_PHASE_IDS)[number];
+
+export type SalePhase = {
+  id: SalePhaseId;
   label: string;
-  /// Fin de période (exclue), en UTC. null pour la vente sur place.
-  endsAt: string | null;
-  isSoldOnline: boolean;
+  /// Début inclus et fin exclue, en UTC (minuit à Angers).
+  startsAt: string;
+  endsAt: string;
+  priceTier: PriceTier;
+  /// Vente privée : réservée aux licenciés FFDanse et aux écoles, sur code.
+  isPrivate: boolean;
 };
 
-export const SALE_PERIODS: readonly SalePeriod[] = [
-  // Minuit à Angers le 15 avril 2027 : le lève-tôt court jusqu'au 14 inclus.
-  { id: "earlyBird", label: "Tarif lève-tôt, jusqu'au 14 avril", endsAt: "2027-04-14T22:00:00Z", isSoldOnline: true },
-  // La prévente s'arrête à l'ouverture du Salon au public, le samedi matin.
-  { id: "presale", label: "Prévente, jusqu'au 14 mai", endsAt: "2027-05-14T22:00:00Z", isSoldOnline: true },
-  { id: "onSite", label: "Sur place", endsAt: null, isSoldOnline: false },
+/// Jalons comptés depuis J = samedi 15 mai 2027, ouverture du Salon au public.
+/// Entre la vente privée et J-45, la billetterie en ligne reste fermée.
+export const SALE_PHASES: readonly SalePhase[] = [
+  // J-90, 48 heures : du 14 février 0 h au 16 février 0 h (heure d'hiver).
+  {
+    id: "privateSale",
+    label: "Vente privée licenciés et écoles",
+    startsAt: "2027-02-13T23:00:00Z",
+    endsAt: "2027-02-15T23:00:00Z",
+    priceTier: "earlyBird",
+    isPrivate: true,
+  },
+  // J-45 à J-30 : du 31 mars au 14 avril inclus (heure d'été).
+  {
+    id: "earlyBird",
+    label: "Early Bird, jusqu'au 14 avril",
+    startsAt: "2027-03-30T22:00:00Z",
+    endsAt: "2027-04-14T22:00:00Z",
+    priceTier: "earlyBird",
+    isPrivate: false,
+  },
+  // À partir de J-30, jusqu'à la veille de l'ouverture au public.
+  {
+    id: "fullPrice",
+    label: "Plein tarif, jusqu'au 14 mai",
+    startsAt: "2027-04-14T22:00:00Z",
+    endsAt: "2027-05-14T22:00:00Z",
+    priceTier: "fullPrice",
+    isPrivate: false,
+  },
 ];
 
 export const TICKET_TYPE_IDS = [
-  "adultOneDay",
-  "adultTwoDays",
-  "reducedOneDay",
-  "reducedTwoDays",
-  "familyOneDay",
-  "familyTwoDays",
-  "openingCeremony",
+  "discoveryPass",
+  "passionPass",
+  "reducedDayPass",
+  "openingEvening",
+  "masterclassSession",
 ] as const;
 export type TicketTypeId = (typeof TICKET_TYPE_IDS)[number];
+
+/// Jauges auxquelles les billets sont décomptés.
+export const TICKET_GAUGES = ["salon", "openingEvening", "masterclass"] as const;
+export type TicketGauge = (typeof TICKET_GAUGES)[number];
 
 export type TicketType = {
   id: TicketTypeId;
   label: string;
   audience: string;
-  /// Personnes que le billet fait entrer au Salon (samedi et dimanche). La
-  /// cérémonie d'ouverture a sa propre salle et ne consomme pas de place.
-  salonSeats: number;
-  pricesInCents: Record<SalePeriodId, number>;
+  gauge: TicketGauge;
+  pricesInCents: Record<PriceTier, number>;
 };
 
 export const TICKET_TYPES: readonly TicketType[] = [
   {
-    id: "adultOneDay",
-    label: "Plein tarif, 1 jour",
-    audience: "À partir de 16 ans, samedi ou dimanche",
-    salonSeats: 1,
-    pricesInCents: { earlyBird: 1350, presale: 1490, onSite: 1700 },
+    id: "discoveryPass",
+    label: "Pass Découverte, 1 jour",
+    audience: "Samedi ou dimanche. Le dimanche, gala de clôture inclus dans la limite des places.",
+    gauge: "salon",
+    pricesInCents: { earlyBird: 1400, fullPrice: 1800 },
   },
   {
-    id: "adultTwoDays",
-    label: "Plein tarif, 2 jours",
-    audience: "À partir de 16 ans, samedi et dimanche",
-    salonSeats: 1,
-    pricesInCents: { earlyBird: 2090, presale: 2690, onSite: 2990 },
+    id: "passionPass",
+    label: "Pass Passion, 2 jours",
+    audience: "Samedi et dimanche, gala de clôture inclus dans la limite des places.",
+    gauge: "salon",
+    pricesInCents: { earlyBird: 2400, fullPrice: 3200 },
   },
   {
-    id: "reducedOneDay",
+    id: "reducedDayPass",
     label: "Tarif réduit, 1 jour",
-    audience: "6-15 ans, étudiants, plus de 65 ans, sur justificatif",
-    salonSeats: 1,
-    pricesInCents: { earlyBird: 990, presale: 1090, onSite: 1200 },
+    audience: "Scolaires, moins de 25 ans, demandeurs d'emploi, sur justificatif à l'entrée.",
+    gauge: "salon",
+    pricesInCents: { earlyBird: 1000, fullPrice: 1300 },
   },
   {
-    id: "reducedTwoDays",
-    label: "Tarif réduit, 2 jours",
-    audience: "6-15 ans, étudiants, plus de 65 ans, sur justificatif",
-    salonSeats: 1,
-    pricesInCents: { earlyBird: 1690, presale: 1890, onSite: 2100 },
+    id: "openingEvening",
+    label: "Soirée d'inauguration",
+    audience: "Vendredi 14 mai : showcases de professionnels et cocktail, interdite aux moins de 12 ans.",
+    gauge: "openingEvening",
+    pricesInCents: { earlyBird: 1800, fullPrice: 2200 },
   },
   {
-    id: "familyOneDay",
-    label: "Pack famille, 1 jour",
-    audience: "2 adultes et 2 enfants",
-    salonSeats: 4,
-    pricesInCents: { earlyBird: 3500, presale: 3900, onSite: 4900 },
-  },
-  {
-    id: "familyTwoDays",
-    label: "Pack famille, 2 jours",
-    audience: "2 adultes et 2 enfants",
-    salonSeats: 4,
-    pricesInCents: { earlyBird: 5900, presale: 6900, onSite: 7900 },
-  },
-  {
-    id: "openingCeremony",
-    label: "Cérémonie d'ouverture",
-    audience: "Vendredi 14 mai, 17h30, interdite aux moins de 12 ans",
-    salonSeats: 0,
-    pricesInCents: { earlyBird: 1900, presale: 1900, onSite: 1900 },
+    id: "masterclassSession",
+    label: "Option masterclass",
+    audience: "Par séance d'1h30 avec un chorégraphe invité, en complément d'un pass.",
+    gauge: "masterclass",
+    pricesInCents: { earlyBird: 1500, fullPrice: 1800 },
   },
 ];
 
-/// Jauge du Salon en nombre de visiteurs. Valeur de démonstration : la
-/// capacité réelle du Centre de Congrès doit être fournie par l'association.
-export const SALON_CAPACITY = 2500;
+/// Volumes cibles du plan 2027 (7 000 festivaliers et 800 séances de
+/// masterclass), utilisés comme jauges de vente en ligne.
+export const GAUGE_CAPACITIES: Record<TicketGauge, number> = {
+  salon: 6300,
+  openingEvening: 700,
+  masterclass: 800,
+};
+
+export const GAUGE_LABELS: Record<TicketGauge, string> = {
+  salon: "le Salon",
+  openingEvening: "la soirée d'inauguration",
+  masterclass: "les masterclass",
+};
+
+/// Plafond des remises accordées par codes promo, en part du chiffre d'affaires
+/// brut (chantier A1). Une fois atteint, les codes ne sont plus proposés.
+export const MAX_DISCOUNT_RATIO = 0.08;
 
 /// Sous ce ratio de places restantes, le compteur passe en « dernières places ».
 export const LOW_AVAILABILITY_RATIO = 0.1;

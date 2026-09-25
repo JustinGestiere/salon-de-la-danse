@@ -3,32 +3,33 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { EDITION } from "@/features/edition/content";
-import { SALON_CAPACITY } from "@/features/tickets/content";
-import { getSeatAvailability, type SeatAvailability } from "@/features/tickets/pricing";
+import { GAUGE_CAPACITIES } from "@/features/tickets/content";
+import { getGaugeUsage, getSeatAvailability, type SeatAvailability } from "@/features/tickets/quotas";
 import { getStripeClient } from "@/features/tickets/stripe-client";
-import { retrievePaidOrder, sumPaidSalonSeats, type PaidOrder } from "@/features/tickets/stripe-gateway";
+import { retrievePaidOrder, summarizePaidSales, type PaidOrder, type PaidSalesSummary } from "@/features/tickets/stripe-gateway";
 
 /// Le compteur s'affiche sur chaque page d'accueil : on ne relit Stripe
 /// qu'une fois par minute. unstable_cache plutôt que « use cache », qui
 /// exigerait Cache Components alors que le layout lit le cookie de thème.
-const SEATS_CACHE_SECONDS = 60;
+const SALES_CACHE_SECONDS = 60;
 
-const getCachedSeatsSold = unstable_cache(
-  async (): Promise<number | null> => {
+const getCachedSalesSummary = unstable_cache(
+  async (): Promise<PaidSalesSummary | null> => {
     const stripe = getStripeClient();
     if (!stripe) return null;
-    return sumPaidSalonSeats(stripe, EDITION.year);
+    return summarizePaidSales(stripe, EDITION.year);
   },
-  ["salon-seats-sold", String(EDITION.year)],
-  { revalidate: SEATS_CACHE_SECONDS, tags: ["salon-seats"] },
+  ["paid-sales-summary", String(EDITION.year)],
+  { revalidate: SALES_CACHE_SECONDS, tags: ["paid-sales"] },
 );
 
-/// Places restantes pour l'affichage, ou null si la billetterie en ligne n'est
+/// Places restantes pour le Salon, ou null si la billetterie en ligne n'est
 /// pas branchée ou que Stripe ne répond pas : la page s'affiche quand même.
 export async function getSeatAvailabilityForDisplay(): Promise<SeatAvailability | null> {
   try {
-    const seatsSold = await getCachedSeatsSold();
-    return seatsSold === null ? null : getSeatAvailability(SALON_CAPACITY, seatsSold);
+    const summary = await getCachedSalesSummary();
+    if (!summary) return null;
+    return getSeatAvailability(GAUGE_CAPACITIES.salon, getGaugeUsage(summary.quantities).salon);
   } catch (error) {
     console.error("[tickets] lecture des ventes Stripe impossible", error);
     return null;

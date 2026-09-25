@@ -104,7 +104,7 @@ export default function WhyNotYouPage() {
         <TicketsCta
           title="Venez à plusieurs,"
           emphasis="repartez danseurs."
-          description="Billet à la journée ou pour le week-end, tarif réduit pour les étudiants."
+          description="Pass 1 jour ou 2 jours, tarif réduit pour les moins de 25 ans. Le dimanche, restez pour le gala de clôture."
           buttonLabel="Prendre mes billets"
         />
       </Container>

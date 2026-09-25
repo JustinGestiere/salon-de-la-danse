@@ -11,6 +11,12 @@ const envSchema = z.object({
   // Facultative : sans clé, le site reste consultable et la billetterie
   // annonce que le paiement en ligne est indisponible.
   STRIPE_SECRET_KEY: z.string().startsWith("sk_").optional(),
+  // Code donné aux clubs FFDanse et aux écoles pour la vente privée de J-90.
+  // Sans lui, la vente privée reste fermée.
+  PRIVATE_SALE_ACCESS_CODE: z.string().min(6).optional(),
+  // Développement uniquement : fait croire à la billetterie qu'on est à cette
+  // date (ISO 8601), pour tester chaque phase de vente. Ignoré en production.
+  TICKETING_CLOCK_OVERRIDE: z.iso.datetime().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
