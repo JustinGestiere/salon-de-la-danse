@@ -1,0 +1,16 @@
+# Le .gitignore de la racine ne vise que ses propres dossiers (/node_modules,
+# /.next) : la vitrine a les siens.
+/node_modules
+/.next
+/out
+/build
+next-env.d.ts
+
+# Env & secrets
+.env
+.env*.local
+
+# Divers
+.DS_Store
+*.tsbuildinfo
+/coverage

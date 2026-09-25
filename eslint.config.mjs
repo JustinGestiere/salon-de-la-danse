@@ -2,7 +2,8 @@ import coreWebVitals from "eslint-config-next/core-web-vitals";
 import typescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
-  { ignores: ["node_modules/**", ".next/**", "src/generated/**"] },
+  // La vitrine (vitrine/) est une application séparée, avec sa propre config.
+  { ignores: ["node_modules/**", ".next/**", "src/generated/**", "vitrine/**"] },
   ...coreWebVitals,
   ...typescript,
   {
